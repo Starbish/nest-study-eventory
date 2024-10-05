@@ -5,11 +5,12 @@ import { CategoryData } from './type/category-data.type';
 
 @Injectable()
 export class CategoryService {
-    constructor(private readonly categoryRepository: CategoryRepository) {}
+  constructor(private readonly categoryRepository: CategoryRepository) {}
 
-    async findAllCategories(): Promise<CategoryListDto> {
-        const categories: CategoryData[] = await this.categoryRepository.findAllCategories();
+  async findAllCategories(): Promise<CategoryListDto> {
+    const categories: CategoryData[] =
+      await this.categoryRepository.findAllCategories();
 
-        return CategoryListDto.from(categories);
-    }
+    return CategoryListDto.from(categories);
+  }
 }

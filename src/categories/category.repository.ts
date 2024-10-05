@@ -4,14 +4,14 @@ import { CategoryData } from './type/category-data.type';
 
 @Injectable()
 export class CategoryRepository {
-    constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-    async findAllCategories(): Promise<CategoryData[]> {
-        return this.prisma.category.findMany({
-            select: {
-              id: true,
-              name: true,
-            },
-        });
-    }
+  async findAllCategories(): Promise<CategoryData[]> {
+    return this.prisma.category.findMany({
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+  }
 }
