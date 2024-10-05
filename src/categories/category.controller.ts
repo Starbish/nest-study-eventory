@@ -12,6 +12,6 @@ export class CategoryController {
   @ApiOperation({ summary: '전체 카테고리를 조회합니다.' })
   @ApiOkResponse({ type: CategoryListDto })
   async findAllCategories(): Promise<CategoryListDto> {
-      return this.categoryService.findAllCategories();
+    return this.categoryService.findAllCategories();
   }
 }
