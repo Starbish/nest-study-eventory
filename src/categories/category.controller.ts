@@ -8,10 +8,11 @@ import { CategoryListDto } from './dto/category.dto';
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
-  @Get()
-  @ApiOperation({ summary: '모든 카테고리를 불러옴' })
   @ApiOkResponse({ type: CategoryListDto })
-  async findAllCategories(): Promise<CategoryListDto> {
-    return this.categoryService.findAllCategories();
-  }
+    @Get()
+    @ApiOperation({ summary: '전체 카테고리를 조회합니다.' })
+    @ApiOkResponse({ type: CategoryListDto })
+    async findAllCategories(): Promise<CategoryListDto> {
+        return this.categoryService.findAllCategories();
+    }
 }
