@@ -1,17 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../common/services/prisma.service';
-import { RegionData } from './type/region-data.type';
+import { CategoryData } from './type/category-data.type';
 
 @Injectable()
-export class RegionRepository {
+export class CategoryRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAllRegions(): Promise<RegionData[]> {
-    return this.prisma.region.findMany({
+  async findAllCategories(): Promise<CategoryData[]> {
+    return this.prisma.category.findMany({
       select: {
         id: true,
         name: true,
-        //        city: true,
       },
     });
   }
