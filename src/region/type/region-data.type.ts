@@ -3,5 +3,5 @@
 export type RegionData = {
   id: number;
   name: string;
-//  city: CityData;
+  //  city: CityData;
 };

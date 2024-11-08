@@ -9,15 +9,15 @@ import { CreateEventPayload } from './payload/create-event.payload';
 @Controller('events')
 @ApiTags('Event API')
 export class EventController {
-    constructor(private readonly eventService: EventService) {}
+  constructor(private readonly eventService: EventService) {}
 
-    @Post()
-    @ApiOperation({ summary: "새로운 모임을 추가합니다." })
-    @ApiCreatedResponse({ type: EventDto })
-    async createEvent(@Body() payload: CreateEventPayload): Promise<EventDto> {
-        return this.eventService.createEvent(payload);
-    }
-/*
+  @Post()
+  @ApiOperation({ summary: '새로운 모임을 추가합니다.' })
+  @ApiCreatedResponse({ type: EventDto })
+  async createEvent(@Body() payload: CreateEventPayload): Promise<EventDto> {
+    return this.eventService.createEvent(payload);
+  }
+  /*
     async modifyEvent(): Promise<boolean> {
         return this.eventService.ModifyEvent(hostId);
     }
