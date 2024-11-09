@@ -54,4 +54,27 @@ export class EventService {
         const event = await this.eventRepository.createEvent(data);
         return EventDto.from(event);
     }
+    
+    async joinEvent(userId: number, eventId: number): Promise<boolean> {
+        if(!await this.eventRepository.findUserById(userId))
+            throw new NotFoundException('해당 ID를 가진 유저가 존재하지 않습니다.');
+
+        if(!await this.eventRepository.getEventTitleById(eventId))
+            throw new NotFoundException('해당 ID를 가진 이벤트가 존재하지 않습니다.');
+
+        if(await this.eventRepository.hasUserJoined(userId, eventId))
+            throw new ConflictException('해당 유저가 이미 모임에 속해 있습니다.');
+
+        return this.eventRepository.joinEvent(userId, eventId);
+    }
+
+    async hasUserJoined(userId: number, eventId: number): Promise<boolean> {
+        if(!await this.eventRepository.findUserById(userId))
+            throw new NotFoundException('해당 ID를 가진 유저가 존재하지 않습니다.');
+
+        if(!await this.eventRepository.getEventTitleById(eventId))
+            throw new NotFoundException('해당 ID를 가진 이벤트가 존재하지 않습니다.');
+        
+        return this.eventRepository.hasUserJoined(userId, eventId);
+    }
 }

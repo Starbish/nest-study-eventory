@@ -34,39 +34,11 @@ export class EventRepository {
         });
 
         // 데이터를 db에 저장하고 그 결과를 받아온 후, 이걸 이용해서 host에 JoinEvent 처리를 해줌
-        await this.joinEvent(data.hostId, result.id, true);
-
+        await this.joinEvent(data.hostId, result.id);
         return result;
     }
 
-    async joinEvent(
-        userId: number, 
-        eventId: number, 
-        skipProcess: boolean = false
-    ): Promise<boolean> {
-        
-        // 기본적인 검증을 모두 해줌
-        // 사실상 createEvent() 밖에서 호출될 때 체크해야 할 것들을 모아둔 것
-        if(!skipProcess) {
-            if(!await this.findUserById(userId))
-                throw new NotFoundException('해당 ID를 가진 유저가 존재하지 않습니다.');
-
-            if(!await this.getEventTitleById(eventId))
-                throw new NotFoundException('해당 ID를 가진 이벤트가 존재하지 않습니다.');
-
-            // 이미 속해있는지 체크
-            if(await this.hasUserJoined(userId, eventId, true))
-                throw new ConflictException('해당 유저가 이미 모임에 속해 있습니다.');
-
-            // 정원 초과 (지금 당장은 필요없어서 패스)
-/*
-            if(await this.getEventUserCount()) {
-
-            }
-*/
-            // 
-        }
-
+    async joinEvent(userId: number, eventId: number): Promise<boolean> {
         const result = await this.prisma.eventJoin.create({
             data: {
                 userId: userId,
@@ -85,20 +57,7 @@ export class EventRepository {
     }
 */
 
-    async hasUserJoined(
-        userId: number, 
-        eventId: number, 
-        skipProcess: boolean = false
-    ): Promise<boolean> {
-
-        if(!skipProcess) {
-            if(!await this.findUserById(userId))
-                throw new NotFoundException('해당 ID를 가진 유저가 존재하지 않습니다.');
-
-            if(!await this.getEventTitleById(eventId))
-                throw new NotFoundException('해당 ID를 가진 이벤트가 존재하지 않습니다.');
-        }
-        
+    async hasUserJoined(userId: number, eventId: number): Promise<boolean> {
         const result = await this.prisma.eventJoin.findUnique({
             where: {
                 id: userId,
@@ -108,7 +67,7 @@ export class EventRepository {
                 id: true,
             }
         });
-
+        
         return !!result;
     }
     

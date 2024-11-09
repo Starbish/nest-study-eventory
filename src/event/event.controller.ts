@@ -17,17 +17,4 @@ export class EventController {
     async createEvent(@Body() payload: CreateEventPayload): Promise<EventDto> {
         return this.eventService.createEvent(payload);
     }
-/*
-    async modifyEvent(): Promise<boolean> {
-        return this.eventService.ModifyEvent(hostId);
-    }
-
-    async deleteEvent(): Promise<boolean> {
-        return this.eventService.DeleteEvent(hostId);
-    }
-
-    async joinEvent(): Promise<boolean> {
-        return this.eventService.DeleteEvent(hostId);
-    }
-*/
 }
