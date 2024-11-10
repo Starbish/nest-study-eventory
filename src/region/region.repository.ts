@@ -11,8 +11,8 @@ export class RegionRepository {
       select: {
         id: true,
         name: true,
-//        city: true,
-      }
+        //        city: true,
+      },
     });
   }
 }
