@@ -82,7 +82,6 @@ export class EventRepository {
         return !!result;
     }
     
-    // hostId 검증
     async findUserById(id: number): Promise<User | null> {
         return this.prisma.user.findUnique({
             where: {
@@ -91,7 +90,6 @@ export class EventRepository {
         });
     }
 
-    // categoryId 
     async getCategoryById(id: number): Promise<Category | null> {
         return this.prisma.category.findUnique({
             where: {
@@ -100,7 +98,6 @@ export class EventRepository {
         });
     }
     
-    // cityId
     async getCityById(id: number): Promise<City | null> {
         return this.prisma.city.findUnique({
             where: {
@@ -109,7 +106,6 @@ export class EventRepository {
         });
     }
 
-    // eventId
     async getEventById(id: number): Promise<Event | null> {
         return this.prisma.event.findUnique({
             where: {
