@@ -78,6 +78,17 @@ export class EventRepository {
     });
     return !!result;
   }
+
+  async leftFromEvent(userId: number, eventId: number): Promise<void> {
+    const result = await this.prisma.eventJoin.delete({
+      where: {
+        eventId_userId: {
+          userId: userId,
+          eventId: eventId,
+        },
+      },
+    });
+  }
   /*
     async getEventUserCount(eventId: number): Promise<number> {
         return this.prisma.event.count({
@@ -108,6 +119,8 @@ export class EventRepository {
     return this.prisma.user.findUnique({
       where: {
         id: id,
+        // 삭제되지 않은 아이디에 한해 검색함
+        deletedAt: null,
       },
     });
   }
@@ -124,6 +137,14 @@ export class EventRepository {
     return this.prisma.city.findUnique({
       where: {
         id: id,
+      },
+    });
+  }
+
+  async getParticipantsCount(eventId: number): Promise<number> {
+    return await this.prisma.eventJoin.count({
+      where: {
+        eventId: eventId,
       },
     });
   }
