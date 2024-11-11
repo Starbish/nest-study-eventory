@@ -71,5 +71,4 @@ export class EventController {
   }
 
   // #19
-
 }
