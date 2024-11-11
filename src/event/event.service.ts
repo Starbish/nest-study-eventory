@@ -105,7 +105,7 @@ export class EventService {
 
   async joinEvent(userId: number, eventId: number): Promise<void> {
     const event = await this.eventRepository.getEventById(eventId);
-    if(!event)
+    if (!event)
       throw new NotFoundException('해당 ID를 가진 모임이 존재하지 않습니다.');
 
     if (!(await this.eventRepository.findUserById(userId)))
@@ -116,15 +116,17 @@ export class EventService {
 
     // 모임 자체가 이 시점에서 유효한지도 확인해야 함.
     // 사실 아래만 해도 되지만, 더 자세한 정보를 제공함
-    if(event.endTime < new Date())
+    if (event.endTime < new Date())
       throw new ConflictException('이미 종료된 모임에 참여할 수 없습니다.');
 
     // 모임 시작 전까지만 참여가 가능함.
-    if(event.startTime > new Date())
+    if (event.startTime > new Date())
       throw new ConflictException('이미 시작된 모임에 참여할 수 없습니다.');
-    
-    if(event.maxPeople 
-      === await this.eventRepository.getParticipantsCount(eventId))
+
+    if (
+      event.maxPeople ===
+      (await this.eventRepository.getParticipantsCount(eventId))
+    )
       throw new ConflictException('해당 모임의 정원이 다 찼습니다.');
 
     this.eventRepository.joinEvent(userId, eventId);
@@ -132,27 +134,27 @@ export class EventService {
 
   async leftFromEvent(userId: number, eventId: number): Promise<void> {
     const event = await this.eventRepository.getEventById(eventId);
-    if(!event)
+    if (!event)
       throw new NotFoundException('해당 ID를 가진 모임이 존재하지 않습니다.');
 
     if (!(await this.eventRepository.findUserById(userId)))
       throw new NotFoundException('해당 ID를 가진 유저가 존재하지 않습니다.');
 
-    if (!await this.eventRepository.hasUserJoined(userId, eventId))
+    if (!(await this.eventRepository.hasUserJoined(userId, eventId)))
       throw new ConflictException('해당 유저가 모임에 속해 있지 않습니다.');
 
     // 모임 자체가 이 시점에서 유효한지도 확인해야 함.
     // 사실 아래만 해도 되지만, 더 자세한 정보를 제공함
-    if(event.endTime < new Date())
+    if (event.endTime < new Date())
       throw new ConflictException('이미 종료된 모임에서 탈퇴할 수 없습니다.');
 
     // 모임 시작 전까지만 참여가 가능함.
-    if(event.startTime > new Date())
+    if (event.startTime > new Date())
       throw new ConflictException('이미 시작된 모임에서 탈퇴할 수 없습니다.');
 
     this.eventRepository.leftFromEvent(userId, eventId);
   }
-  
+
   async hasUserJoined(userId: number, eventId: number): Promise<boolean> {
     if (!(await this.eventRepository.findUserById(userId)))
       throw new NotFoundException('해당 ID를 가진 유저가 존재하지 않습니다.');
