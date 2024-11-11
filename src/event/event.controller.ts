@@ -65,8 +65,11 @@ export class EventController {
   @HttpCode(204)
   async joinEvent(
     @Body() body: JoinEventPayload,
-    @Param('eventId') eventId: number,
+    @Param('eventId', ParseIntPipe) eventId: number,
   ): Promise<void> {
     await this.eventService.joinEvent(body.userId, eventId);
   }
+
+  // #19
+
 }
