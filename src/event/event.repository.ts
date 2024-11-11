@@ -108,6 +108,8 @@ export class EventRepository {
     return this.prisma.user.findUnique({
       where: {
         id: id,
+        // 삭제되지 않은 아이디에 한해 검색함
+        deletedAt: null,
       },
     });
   }

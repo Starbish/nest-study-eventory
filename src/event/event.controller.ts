@@ -6,9 +6,11 @@ import {
   Param,
   ParseIntPipe,
   Query,
+  HttpCode,
 } from '@nestjs/common';
 import {
   ApiCreatedResponse,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -18,6 +20,7 @@ import { EventDto, EventListDto } from './dto/event.dto';
 
 import { CreateEventPayload } from './payload/create-event.payload';
 import { SearchEventQuery } from './query/search-event.query';
+import { JoinEventPayload } from './payload/join-event.payload';
 
 @Controller('events')
 @ApiTags('Event API')
@@ -53,5 +56,17 @@ export class EventController {
     @Query() query: SearchEventQuery,
   ): Promise<EventListDto> {
     return this.eventService.searchEventList(query);
+  }
+
+  // #18
+  @Post(':eventId/join')
+  @ApiOperation({ summary: '유저를 event에 참여시킵니다.' })
+  @ApiNoContentResponse()
+  @HttpCode(204)
+  async joinEvent(
+    @Body() body: JoinEventPayload,
+    @Param('eventId') eventId: number,
+  ): Promise<void> {
+    await this.eventService.joinEvent(body.userId, eventId);
   }
 }
