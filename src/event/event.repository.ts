@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Category, City, Event, User } from '@prisma/client';
 import { PrismaService } from '../common/services/prisma.service';
-import { EventListDto } from './dto/event.dto';
+import { EventDto, EventListDto } from './dto/event.dto';
 import { SearchEventQuery } from './query/search-event.query';
 import { CreateEventData } from './type/create-event-data.type';
 import { EventData } from './type/event-data.type';
+import { PatchEventData } from './type/patch-event-data.type';
 
 @Injectable()
 export class EventRepository {
@@ -87,6 +88,34 @@ export class EventRepository {
           eventId: eventId,
         },
       },
+    });
+  }
+
+  async patchEvent(data: PatchEventData, eventId: number): Promise<EventData> {
+    return this.prisma.event.update({
+      where: {
+        id: eventId,
+      },
+      data: {
+        title: data.title,
+        description: data.description,
+        categoryId: data.categoryId,
+        cityId: data.cityId,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        maxPeople: data.maxPeople,
+      },
+      select: {
+        id: true,
+        hostId: true,
+        title: true,
+        description: true,
+        categoryId: true,
+        cityId: true,
+        startTime: true,
+        endTime: true,
+        maxPeople: true,
+      }
     });
   }
   /*

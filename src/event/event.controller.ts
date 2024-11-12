@@ -7,6 +7,7 @@ import {
   ParseIntPipe,
   Query,
   HttpCode,
+  Patch,
 } from '@nestjs/common';
 import {
   ApiCreatedResponse,
@@ -21,6 +22,7 @@ import { EventDto, EventListDto } from './dto/event.dto';
 import { CreateEventPayload } from './payload/create-event.payload';
 import { SearchEventQuery } from './query/search-event.query';
 import { EventInOutPayload } from './payload/event-inout.payload';
+import { PatchEventPayload } from './payload/patch-event.payload';
 
 @Controller('events')
 @ApiTags('Event API')
@@ -80,5 +82,16 @@ export class EventController {
     @Param('eventId', ParseIntPipe) eventId: number,
   ): Promise<void> {
     await this.eventService.leftFromEvent(body.userId, eventId);
+  }
+
+  // #33
+  @Patch(':eventId')
+  @ApiOperation({ summary: '모임을 수정합니다.' })
+  @ApiOkResponse({ type: EventDto })
+  async patchEvent(
+    @Body() body: PatchEventPayload,
+    @Param('eventId') eventId: number,
+  ): Promise<EventDto> {
+    return await this.eventService.patchEvent(body, eventId);
   }
 }
