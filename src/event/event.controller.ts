@@ -8,6 +8,7 @@ import {
   Query,
   HttpCode,
   Patch,
+  Delete,
 } from '@nestjs/common';
 import {
   ApiCreatedResponse,
@@ -93,5 +94,14 @@ export class EventController {
     @Param('eventId') eventId: number,
   ): Promise<EventDto> {
     return await this.eventService.patchEvent(body, eventId);
+  }
+
+  // #34
+  @Delete(':event')
+  @ApiOperation({ summary: '모임을 삭제합니다.' })
+  @ApiNoContentResponse()
+  @HttpCode(204)
+  async deleteEvent(@Param('event') eventId: number): Promise<void> {
+    await this.eventService.deleteEvent(eventId);
   }
 }

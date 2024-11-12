@@ -154,6 +154,10 @@ export class EventService {
     if (event.startTime > new Date())
       throw new ConflictException('이미 시작된 모임에서 탈퇴할 수 없습니다.');
 
+    // 주최자(host)는 나갈 수 없는 기능
+    if (event.hostId === userId)
+      throw new ConflictException('주최자는 모임에서 나갈 수 없습니다.');
+
     this.eventRepository.leftFromEvent(userId, eventId);
   }
 
@@ -162,16 +166,15 @@ export class EventService {
     eventId: number,
   ): Promise<EventDto> {
     const prevEvent = await this.getEventById(eventId);
+    if (!prevEvent)
+      throw new NotFoundException('해당 ID를 가진 모임이 존재하지 않습니다.');
+
     // Event 수정은 시작 전까지만 가능함.
     if (prevEvent.endTime < new Date())
-      throw new ConflictException(
-        '모임 정보는 종료 이후에는 변경할 수 없습니다.',
-      );
+      throw new ConflictException('종료된 모임은 정보를 변경할 수 없습니다.');
 
     if (prevEvent.startTime < new Date())
-      throw new ConflictException(
-        '모임 정보는 시작 이후에는 변경할 수 없습니다.',
-      );
+      throw new ConflictException('진행중인 모임은 정보를 변경할 수 없습니다.');
 
     // 변경할 카테고리, 도시가 실제로 db상에 존재하는지를 확인해야 함.
     // 어찌 보면 일종의 event (재)생성이므로 createEvent() 의 예외처리를 참고할 필요가 있다.
@@ -236,6 +239,21 @@ export class EventService {
 
     const updated = await this.eventRepository.patchEvent(data, eventId);
     return EventDto.from(updated);
+  }
+
+  async deleteEvent(eventId: number): Promise<void> {
+    const event = await this.eventRepository.getEventById(eventId);
+    if (!event)
+      throw new NotFoundException('해당 ID를 가진 모임이 존재하지 않습니다.');
+
+    if (event.endTime < new Date())
+      throw new ConflictException('종료된 모임은 삭제할 수 없습니다.');
+
+    // Event 수정은 시작 전까지만 가능함.
+    if (event.startTime < new Date())
+      throw new ConflictException('진행중인 모임은 삭제할 수 없습니다.');
+
+    await this.eventRepository.deleteEvent(eventId);
   }
 
   async hasUserJoined(userId: number, eventId: number): Promise<boolean> {

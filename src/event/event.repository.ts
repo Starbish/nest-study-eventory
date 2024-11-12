@@ -118,15 +118,14 @@ export class EventRepository {
       },
     });
   }
-  /*
-    async getEventUserCount(eventId: number): Promise<number> {
-        return this.prisma.event.count({
-            where: {
 
-            }
-        });
-    }
-*/
+  async deleteEvent(eventId: number): Promise<void> {
+    await this.prisma.event.delete({
+      where: {
+        id: eventId,
+      },
+    });
+  }
 
   async hasUserJoined(userId: number, eventId: number): Promise<boolean> {
     const result = await this.prisma.eventJoin.findUnique({
