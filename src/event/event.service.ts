@@ -157,24 +157,34 @@ export class EventService {
     this.eventRepository.leftFromEvent(userId, eventId);
   }
 
-  async patchEvent(body: PatchEventPayload, eventId: number): Promise<EventDto> {
-
+  async patchEvent(
+    body: PatchEventPayload,
+    eventId: number,
+  ): Promise<EventDto> {
     const prevEvent = await this.getEventById(eventId);
     // Event 수정은 시작 전까지만 가능함.
-    if(prevEvent.endTime < new Date())
-      throw new ConflictException('모임 정보는 종료 이후에는 변경할 수 없습니다.');
+    if (prevEvent.endTime < new Date())
+      throw new ConflictException(
+        '모임 정보는 종료 이후에는 변경할 수 없습니다.',
+      );
 
-    if(prevEvent.startTime < new Date())
-      throw new ConflictException('모임 정보는 시작 이후에는 변경할 수 없습니다.');
+    if (prevEvent.startTime < new Date())
+      throw new ConflictException(
+        '모임 정보는 시작 이후에는 변경할 수 없습니다.',
+      );
 
     // 변경할 카테고리, 도시가 실제로 db상에 존재하는지를 확인해야 함.
     // 어찌 보면 일종의 event (재)생성이므로 createEvent() 의 예외처리를 참고할 필요가 있다.
-    if(body.categoryId !== undefined &&
-      !(await this.eventRepository.getCategoryById(body.categoryId)))
+    if (
+      body.categoryId !== undefined &&
+      !(await this.eventRepository.getCategoryById(body.categoryId))
+    )
       throw new NotFoundException('입력한 카테고리 ID가 존재하지 않습니다.');
-    
-    if(body.cityId !== undefined &&
-      !(await this.eventRepository.getCityById(body.cityId)))
+
+    if (
+      body.cityId !== undefined &&
+      !(await this.eventRepository.getCityById(body.cityId))
+    )
       throw new NotFoundException('입력한 도시 ID가 존재하지 않습니다.');
 
     // startTime과 endTime에 대한 검증이 필요함.
@@ -191,21 +201,29 @@ export class EventService {
     // 처리 필요 없음
 
     // 음... 각각의 케이스로 처리하는 것도 좋지만 아래의 방법이 조금 더 현명한 방법인듯
-    let startTime = (body.startTime !== undefined) ? body.startTime : prevEvent.startTime;
-    let endTime = (body.endTime !== undefined) ? body.endTime : prevEvent.endTime;
-    if(startTime > endTime)
-      throw new ConflictException('시작 시각이 종료 시각보다 뒤늦을 수 없습니다.');
-    
+    let startTime =
+      body.startTime !== undefined ? body.startTime : prevEvent.startTime;
+    let endTime = body.endTime !== undefined ? body.endTime : prevEvent.endTime;
+    if (startTime > endTime)
+      throw new ConflictException(
+        '시작 시각이 종료 시각보다 뒤늦을 수 없습니다.',
+      );
+
     // Event 정보는 hostId 만 수정할 수 있는 부분은 어떻게 구현?
 
     // 조금 애매함
     // startTime 을 현재보다 과거로 설정해 지금 모임이 시작중인 상태로 변경하는 것을 방지함
 
     // 이전보다 maxPeople 값이 작아질 경우, 현재 정원과 비교해서 가능한지 확인해야 함.
-    if(body.maxPeople !== undefined)
-      if(body.maxPeople < await this.eventRepository.getParticipantsCount(eventId))
-        throw new ConflictException('모임 최대 정원은 현재 참가 인원보다 크거나 같아야 합니다.');
-    
+    if (body.maxPeople !== undefined)
+      if (
+        body.maxPeople <
+        (await this.eventRepository.getParticipantsCount(eventId))
+      )
+        throw new ConflictException(
+          '모임 최대 정원은 현재 참가 인원보다 크거나 같아야 합니다.',
+        );
+
     const data: PatchEventData = {
       title: body.title,
       description: body.description,
@@ -214,7 +232,7 @@ export class EventService {
       startTime: body.startTime,
       endTime: body.endTime,
       maxPeople: body.maxPeople,
-    }
+    };
 
     const updated = await this.eventRepository.patchEvent(data, eventId);
     return EventDto.from(updated);

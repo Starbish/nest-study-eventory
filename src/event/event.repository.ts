@@ -115,7 +115,7 @@ export class EventRepository {
         startTime: true,
         endTime: true,
         maxPeople: true,
-      }
+      },
     });
   }
   /*
