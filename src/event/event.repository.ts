@@ -134,6 +134,10 @@ export class EventRepository {
           userId: userId,
           eventId: eventId,
         },
+        // Soft delete 구현
+        user: {
+          deletedAt: null,
+        }
       },
       select: {
         id: true,
@@ -146,8 +150,8 @@ export class EventRepository {
   async findUserById(id: number): Promise<User | null> {
     return this.prisma.user.findUnique({
       where: {
-        id: id,
         // 삭제되지 않은 아이디에 한해 검색함
+        id: id,
         deletedAt: null,
       },
     });
@@ -173,6 +177,9 @@ export class EventRepository {
     return await this.prisma.eventJoin.count({
       where: {
         eventId: eventId,
+        user: {
+          deletedAt: null,
+        }
       },
     });
   }

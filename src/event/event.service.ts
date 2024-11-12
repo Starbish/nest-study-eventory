@@ -255,7 +255,7 @@ export class EventService {
 
     await this.eventRepository.deleteEvent(eventId);
   }
-
+/*
   async hasUserJoined(userId: number, eventId: number): Promise<boolean> {
     if (!(await this.eventRepository.findUserById(userId)))
       throw new NotFoundException('해당 ID를 가진 유저가 존재하지 않습니다.');
@@ -265,4 +265,5 @@ export class EventService {
 
     return this.eventRepository.hasUserJoined(userId, eventId);
   }
+*/
 }
