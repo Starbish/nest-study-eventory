@@ -122,7 +122,7 @@ export class EventService {
       throw new ConflictException('이미 종료된 모임에 참여할 수 없습니다.');
 
     // 모임 시작 전까지만 참여가 가능함.
-    if (event.startTime > new Date())
+    if (event.startTime < new Date())
       throw new ConflictException('이미 시작된 모임에 참여할 수 없습니다.');
 
     if (
@@ -151,7 +151,7 @@ export class EventService {
       throw new ConflictException('이미 종료된 모임에서 탈퇴할 수 없습니다.');
 
     // 모임 시작 전까지만 참여가 가능함.
-    if (event.startTime > new Date())
+    if (event.startTime < new Date())
       throw new ConflictException('이미 시작된 모임에서 탈퇴할 수 없습니다.');
 
     // 주최자(host)는 나갈 수 없는 기능

@@ -120,6 +120,13 @@ export class EventRepository {
   }
 
   async deleteEvent(eventId: number): Promise<void> {
+    // 관련된 EventJoin 데이터를 모두 삭제함
+    await this.prisma.eventJoin.deleteMany({
+      where: {
+        eventId: eventId,
+      }
+    });
+    // Event row도 삭제함
     await this.prisma.event.delete({
       where: {
         id: eventId,

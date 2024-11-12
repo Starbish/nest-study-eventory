@@ -43,6 +43,7 @@ export class PatchEventPayload {
   cityId?: number;
 
   @IsDate()
+  @IsOptional()
   @Type(() => Date)
   @ApiProperty({
     description: '모임 시작 시각',
@@ -51,6 +52,7 @@ export class PatchEventPayload {
   startTime?: Date;
 
   @IsDate()
+  @IsOptional()
   @Type(() => Date)
   @ApiProperty({
     description: '모임 종료 시각',
