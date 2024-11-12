@@ -82,10 +82,10 @@ export class EventRepository {
   async leftFromEvent(userId: number, eventId: number): Promise<void> {
     const result = await this.prisma.eventJoin.delete({
       where: {
-        eventId_userId:{
+        eventId_userId: {
           userId: userId,
           eventId: eventId,
-        }
+        },
       },
     });
   }
@@ -144,8 +144,8 @@ export class EventRepository {
   async getParticipantsCount(eventId: number): Promise<number> {
     return await this.prisma.eventJoin.count({
       where: {
-        eventId: eventId
-      }
+        eventId: eventId,
+      },
     });
   }
 }
