@@ -52,7 +52,7 @@ export class EventController {
   @Get()
   @ApiOperation({
     summary:
-      'hostId, cityId, categoryId 중 2개 이상을 입력하고, 그 조건에 맞는 모임 정보를 모두 가져옵니다.',
+      'hostId, cityId, categoryId 중 1개 이상을 입력하고, 그 조건에 맞는 모임 정보를 모두 가져옵니다.',
   })
   @ApiOkResponse({ type: EventListDto })
   async searchEventList(

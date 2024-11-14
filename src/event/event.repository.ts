@@ -1,11 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { Category, City, Event, User } from '@prisma/client';
 import { PrismaService } from '../common/services/prisma.service';
-import { EventDto, EventListDto } from './dto/event.dto';
 import { SearchEventQuery } from './query/search-event.query';
 import { CreateEventData } from './type/create-event-data.type';
 import { EventData } from './type/event-data.type';
-import { PatchEventData } from './type/patch-event-data.type';
+import { UpdateEventData } from './type/update-event-data.type';
 
 @Injectable()
 export class EventRepository {
@@ -58,7 +57,7 @@ export class EventRepository {
     });
   }
 
-  async searchEventList(query: SearchEventQuery): Promise<EventListDto> {
+  async searchEventList(query: SearchEventQuery): Promise<EventData[]> {
     const data = await this.prisma.event.findMany({
       where: {
         hostId: query.hostId,
@@ -67,21 +66,20 @@ export class EventRepository {
       },
     });
 
-    return EventListDto.from(data);
+    return data;
   }
 
-  async joinEvent(userId: number, eventId: number): Promise<boolean> {
-    const result = await this.prisma.eventJoin.create({
+  async joinEvent(userId: number, eventId: number): Promise<void> {
+    await this.prisma.eventJoin.create({
       data: {
         userId: userId,
         eventId: eventId,
       },
     });
-    return !!result;
   }
 
   async leftFromEvent(userId: number, eventId: number): Promise<void> {
-    const result = await this.prisma.eventJoin.delete({
+    await this.prisma.eventJoin.delete({
       where: {
         eventId_userId: {
           userId: userId,
@@ -91,7 +89,7 @@ export class EventRepository {
     });
   }
 
-  async patchEvent(data: PatchEventData, eventId: number): Promise<EventData> {
+  async updateEvent(data: UpdateEventData, eventId: number): Promise<EventData> {
     return this.prisma.event.update({
       where: {
         id: eventId,
@@ -120,18 +118,21 @@ export class EventRepository {
   }
 
   async deleteEvent(eventId: number): Promise<void> {
-    // 관련된 EventJoin 데이터를 모두 삭제함
-    await this.prisma.eventJoin.deleteMany({
-      where: {
-        eventId: eventId,
-      }
-    });
-    // Event row도 삭제함
-    await this.prisma.event.delete({
-      where: {
-        id: eventId,
-      },
-    });
+    // transaction을 통해 두 query에 동시 성공 / 동시 실패만 가능하도록 보장함
+    await this.prisma.$transaction([
+      // 관련된 EventJoin 데이터를 모두 삭제함
+      this.prisma.eventJoin.deleteMany({
+        where: {
+          eventId: eventId,
+        }
+      }),
+      // Event row도 삭제함
+      this.prisma.event.delete({
+        where: {
+          id: eventId,
+        },
+      }),
+    ]);
   }
 
   async hasUserJoined(userId: number, eventId: number): Promise<boolean> {

@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsInt, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -34,6 +34,6 @@ export class SearchEventQuery {
     const list = [this.hostId, this.cityId, this.categoryId];
     const count = list.filter((element) => element !== undefined).length;
 
-    return count >= 2;
+    return count >= 1;
   }
 }

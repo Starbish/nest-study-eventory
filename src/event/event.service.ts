@@ -11,7 +11,8 @@ import { CreateEventPayload } from './payload/create-event.payload';
 import { CreateEventData } from './type/create-event-data.type';
 import { SearchEventQuery } from './query/search-event.query';
 import { PatchEventPayload } from './payload/patch-event.payload';
-import { PatchEventData } from './type/patch-event-data.type';
+import { UpdateEventData } from './type/update-event-data.type';
+import { EventData } from './type/event-data.type';
 
 @Injectable()
 export class EventService {
@@ -81,28 +82,11 @@ export class EventService {
     // 고로, 3개의 필드에 대해 각각의 값이 undefined가 아닌 경우 실제로 그 값이 유효한지 검증해야 함
     if (!query.hasEnoughParams())
       throw new BadRequestException(
-        'Host ID, City ID, Category ID 중 적어도 2개 이상을 입력해야 합니다.',
+        'Host ID, City ID, Category ID 중 적어도 1개 이상을 입력해야 합니다.',
       );
 
-    if (
-      query.hostId !== undefined &&
-      !(await this.eventRepository.findUserById(query.hostId))
-    )
-      throw new NotFoundException('해당 ID를 가진 유저가 존재하지 않습니다.');
-
-    if (
-      query.cityId !== undefined &&
-      !(await this.eventRepository.getCityById(query.cityId))
-    )
-      throw new NotFoundException('입력한 도시 ID가 존재하지 않습니다.');
-
-    if (
-      query.categoryId !== undefined &&
-      !(await this.eventRepository.getCategoryById(query.categoryId))
-    )
-      throw new NotFoundException('입력한 카테고리 ID가 존재하지 않습니다.');
-
-    return this.eventRepository.searchEventList(query);
+    const data: EventData[] = await this.eventRepository.searchEventList(query);
+    return EventListDto.from(data);
   }
 
   async joinEvent(userId: number, eventId: number): Promise<void> {
@@ -110,10 +94,12 @@ export class EventService {
     if (!event)
       throw new NotFoundException('해당 ID를 가진 모임이 존재하지 않습니다.');
 
-    if (!(await this.eventRepository.findUserById(userId)))
+    const user = await this.eventRepository.findUserById(userId);
+    if (!user)
       throw new NotFoundException('해당 ID를 가진 유저가 존재하지 않습니다.');
 
-    if (await this.eventRepository.hasUserJoined(userId, eventId))
+    const isJoined = await this.eventRepository.hasUserJoined(userId, eventId);
+    if (isJoined)
       throw new ConflictException('해당 유저가 이미 모임에 속해 있습니다.');
 
     // 모임 자체가 이 시점에서 유효한지도 확인해야 함.
@@ -125,13 +111,11 @@ export class EventService {
     if (event.startTime < new Date())
       throw new ConflictException('이미 시작된 모임에 참여할 수 없습니다.');
 
-    if (
-      event.maxPeople ===
-      (await this.eventRepository.getParticipantsCount(eventId))
-    )
+    const count = await this.eventRepository.getParticipantsCount(eventId);
+    if (event.maxPeople === count)
       throw new ConflictException('해당 모임의 정원이 다 찼습니다.');
 
-    this.eventRepository.joinEvent(userId, eventId);
+    await this.eventRepository.joinEvent(userId, eventId);
   }
 
   async leftFromEvent(userId: number, eventId: number): Promise<void> {
@@ -139,10 +123,12 @@ export class EventService {
     if (!event)
       throw new NotFoundException('해당 ID를 가진 모임이 존재하지 않습니다.');
 
-    if (!(await this.eventRepository.findUserById(userId)))
+    const user = await this.eventRepository.findUserById(userId);
+    if (!user)
       throw new NotFoundException('해당 ID를 가진 유저가 존재하지 않습니다.');
 
-    if (!(await this.eventRepository.hasUserJoined(userId, eventId)))
+    const isJoined = await this.eventRepository.hasUserJoined(userId, eventId);
+    if (!isJoined)
       throw new ConflictException('해당 유저가 모임에 속해 있지 않습니다.');
 
     // 모임 자체가 이 시점에서 유효한지도 확인해야 함.
@@ -158,7 +144,7 @@ export class EventService {
     if (event.hostId === userId)
       throw new ConflictException('주최자는 모임에서 나갈 수 없습니다.');
 
-    this.eventRepository.leftFromEvent(userId, eventId);
+    await this.eventRepository.leftFromEvent(userId, eventId);
   }
 
   async patchEvent(
@@ -204,18 +190,20 @@ export class EventService {
     // 처리 필요 없음
 
     // 음... 각각의 케이스로 처리하는 것도 좋지만 아래의 방법이 조금 더 현명한 방법인듯
-    let startTime =
+    const startTime =
       body.startTime !== undefined ? body.startTime : prevEvent.startTime;
-    let endTime = body.endTime !== undefined ? body.endTime : prevEvent.endTime;
+    const endTime = body.endTime !== undefined ? body.endTime : prevEvent.endTime;
     if (startTime > endTime)
       throw new ConflictException(
         '시작 시각이 종료 시각보다 뒤늦을 수 없습니다.',
       );
+    
+    // startTime 을 현재보다 과거로 설정해 지금 모임이 시작중인 상태로 변경하는 것을 방지함
+    if (startTime < new Date())
+      throw new ConflictException('시작 시각을 현재 시각보다 뒤로 설정할 수 없습니다.');
 
     // Event 정보는 hostId 만 수정할 수 있는 부분은 어떻게 구현?
-
     // 조금 애매함
-    // startTime 을 현재보다 과거로 설정해 지금 모임이 시작중인 상태로 변경하는 것을 방지함
 
     // 이전보다 maxPeople 값이 작아질 경우, 현재 정원과 비교해서 가능한지 확인해야 함.
     if (body.maxPeople !== undefined)
@@ -227,7 +215,7 @@ export class EventService {
           '모임 최대 정원은 현재 참가 인원보다 크거나 같아야 합니다.',
         );
 
-    const data: PatchEventData = {
+    const data: UpdateEventData = {
       title: body.title,
       description: body.description,
       categoryId: body.categoryId,
@@ -237,7 +225,7 @@ export class EventService {
       maxPeople: body.maxPeople,
     };
 
-    const updated = await this.eventRepository.patchEvent(data, eventId);
+    const updated = await this.eventRepository.updateEvent(data, eventId);
     return EventDto.from(updated);
   }
 
@@ -252,7 +240,7 @@ export class EventService {
     // Event 수정은 시작 전까지만 가능함.
     if (event.startTime < new Date())
       throw new ConflictException('진행중인 모임은 삭제할 수 없습니다.');
-
+    
     await this.eventRepository.deleteEvent(eventId);
   }
 /*

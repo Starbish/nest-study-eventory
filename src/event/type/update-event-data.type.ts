@@ -1,4 +1,4 @@
-export type PatchEventData = {
+export type UpdateEventData = {
   title?: string;
   description?: string;
   categoryId?: number;
