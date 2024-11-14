@@ -192,15 +192,18 @@ export class EventService {
     // 음... 각각의 케이스로 처리하는 것도 좋지만 아래의 방법이 조금 더 현명한 방법인듯
     const startTime =
       body.startTime !== undefined ? body.startTime : prevEvent.startTime;
-    const endTime = body.endTime !== undefined ? body.endTime : prevEvent.endTime;
+    const endTime =
+      body.endTime !== undefined ? body.endTime : prevEvent.endTime;
     if (startTime > endTime)
       throw new ConflictException(
         '시작 시각이 종료 시각보다 뒤늦을 수 없습니다.',
       );
-    
+
     // startTime 을 현재보다 과거로 설정해 지금 모임이 시작중인 상태로 변경하는 것을 방지함
     if (startTime < new Date())
-      throw new ConflictException('시작 시각을 현재 시각보다 뒤로 설정할 수 없습니다.');
+      throw new ConflictException(
+        '시작 시각을 현재 시각보다 뒤로 설정할 수 없습니다.',
+      );
 
     // Event 정보는 hostId 만 수정할 수 있는 부분은 어떻게 구현?
     // 조금 애매함
@@ -240,10 +243,10 @@ export class EventService {
     // Event 수정은 시작 전까지만 가능함.
     if (event.startTime < new Date())
       throw new ConflictException('진행중인 모임은 삭제할 수 없습니다.');
-    
+
     await this.eventRepository.deleteEvent(eventId);
   }
-/*
+  /*
   async hasUserJoined(userId: number, eventId: number): Promise<boolean> {
     if (!(await this.eventRepository.findUserById(userId)))
       throw new NotFoundException('해당 ID를 가진 유저가 존재하지 않습니다.');

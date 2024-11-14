@@ -89,7 +89,10 @@ export class EventRepository {
     });
   }
 
-  async updateEvent(data: UpdateEventData, eventId: number): Promise<EventData> {
+  async updateEvent(
+    data: UpdateEventData,
+    eventId: number,
+  ): Promise<EventData> {
     return this.prisma.event.update({
       where: {
         id: eventId,
@@ -124,7 +127,7 @@ export class EventRepository {
       this.prisma.eventJoin.deleteMany({
         where: {
           eventId: eventId,
-        }
+        },
       }),
       // Event row도 삭제함
       this.prisma.event.delete({
@@ -145,7 +148,7 @@ export class EventRepository {
         // Soft delete 구현
         user: {
           deletedAt: null,
-        }
+        },
       },
       select: {
         id: true,
@@ -187,7 +190,7 @@ export class EventRepository {
         eventId: eventId,
         user: {
           deletedAt: null,
-        }
+        },
       },
     });
   }
