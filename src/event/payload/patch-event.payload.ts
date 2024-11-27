@@ -11,26 +11,26 @@ import {
 import { ValidationOptions } from 'joi';
 
 // https://stackoverflow.com/questions/55571773/validation-on-optional-parameter-using-class-validator-in-nestjs
-// ValidateIf 에 조건으로 걸려있는 함수가 
+// ValidateIf 에 조건으로 걸려있는 함수가
 // true일 때는 모든 decorator 작동,
 // false일 때는 모든 decorator 를 무시함.
 // 즉, 필드가 undefined 일때는 모든 데코레이터를 무시하므로 수용,
 // 필드가 null 일때는 데코레이터를 거치므로 다른 데코레이터에 의해 필터되고,
 // 두 경우가 다 아닌 경우는 이외의 데코레이터에 의해 검증된다.
 export function IsOptionalNonNullable(data?: {
-  nullable: boolean
-  validationOptions?: ValidationOptions
+  nullable: boolean;
+  validationOptions?: ValidationOptions;
 }) {
-  const { nullable = false, validationOptions = undefined } = data || {}
+  const { nullable = false, validationOptions = undefined } = data || {};
 
   if (nullable) {
     // IsOptional allows null
-    return IsOptional(validationOptions)
+    return IsOptional(validationOptions);
   }
 
   return ValidateIf((ob: any, v: any) => {
-    return v !== undefined
-  }, validationOptions)
+    return v !== undefined;
+  }, validationOptions);
 }
 
 export class PatchEventPayload {
