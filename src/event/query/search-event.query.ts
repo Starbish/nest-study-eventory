@@ -29,11 +29,4 @@ export class SearchEventQuery {
     type: Number,
   })
   categoryId?: number;
-
-  hasEnoughParams(): boolean {
-    const list = [this.hostId, this.cityId, this.categoryId];
-    const count = list.filter((element) => element !== undefined).length;
-
-    return count >= 1;
-  }
 }

@@ -77,14 +77,6 @@ export class EventService {
   }
 
   async searchEventList(query: SearchEventQuery): Promise<EventListDto> {
-    // hostId, cityId, categoryId 전부 반드시 받아야 하는 값이 아님.
-    // prisma 에는 다행히도 undefined 값으로 검색할 경우 해당 필드를 검색 기준에서 제외함
-    // 고로, 3개의 필드에 대해 각각의 값이 undefined가 아닌 경우 실제로 그 값이 유효한지 검증해야 함
-    if (!query.hasEnoughParams())
-      throw new BadRequestException(
-        'Host ID, City ID, Category ID 중 적어도 1개 이상을 입력해야 합니다.',
-      );
-
     const data: EventData[] = await this.eventRepository.searchEventList(query);
     return EventListDto.from(data);
   }
