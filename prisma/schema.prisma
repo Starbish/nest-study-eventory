@@ -29,6 +29,8 @@ model User {
   event     Event[]
   eventJoin EventJoin[]
   review    Review[]
+  club      Club[]
+  clubJoin  ClubJoin[]
 
   city     City?    @relation(fields: [cityId], references: [id])
   category Category @relation(fields: [categoryId], references: [id])
@@ -55,6 +57,7 @@ model Event {
   title       String
   description String
   maxPeople   Int      @map("max_people")
+  clubId      Int?     @map("club_id")
   startTime   DateTime @map("start_time")
   endTime     DateTime @map("end_time")
   createdAt   DateTime @default(now()) @map("created_at")
@@ -62,6 +65,7 @@ model Event {
 
   host     User     @relation(fields: [hostId], references: [id])
   category Category @relation(fields: [categoryId], references: [id])
+  club     Club?     @relation(fields: [clubId], references: [id])
 
   eventJoin EventJoin[]
   eventCity EventCity[]
@@ -139,4 +143,40 @@ model City {
   user      User[]
 
   @@map("city")
+}
+
+model Club {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String?
+  ownerId     Int       @map("owner_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [ownerId], references: [id])
+
+  event Event[]
+  clubJoin ClubJoin[]
+
+  @@map("club")
+}
+
+enum ClubJoinState {
+  Applied
+  Accepted
+}
+
+model ClubJoin {
+  id           Int            @id @default(autoincrement())
+  userId       Int            @map("user_id")
+  clubId       Int            @map("club_id")
+  state        ClubJoinState
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  user  User  @relation(fields: [userId], references: [id])
+  club  Club  @relation(fields: [clubId], references: [id])
+
+  @@unique([userId, clubId])
+  @@map("club_join")
 }
