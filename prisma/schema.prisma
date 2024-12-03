@@ -164,6 +164,8 @@ model Club {
 enum ClubJoinState {
   Applied
   Accepted
+
+  @@map("club_join_state")
 }
 
 model ClubJoin {
