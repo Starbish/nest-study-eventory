@@ -3,7 +3,7 @@ import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ClubService } from './club.service';
 import { ClubInfoDto } from './dto/club-info.dto';
 
-@Controller('club')
+@Controller('clubs')
 @ApiTags('Club API')
 export class ClubController {
     constructor(private readonly clubService: ClubService) {}

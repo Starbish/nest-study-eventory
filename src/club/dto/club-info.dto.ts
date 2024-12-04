@@ -19,7 +19,7 @@ export class ClubInfoDto {
     description: '클럽 설명',
     type: String,
   })
-  description?: string | null;
+  description!: string | null;
 
   @ApiProperty({
     description: '클럽장 유저 ID',
