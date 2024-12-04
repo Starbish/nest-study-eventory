@@ -7,11 +7,11 @@ import { ClubInfoData } from './type/club-info-data.type';
 export class ClubRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getClubInfo(clubId: number): Promise<ClubInfoData | null>{
+  async getClubInfo(clubId: number): Promise<ClubInfoData | null> {
     return this.prisma.club.findUnique({
       where: {
         id: clubId,
-      }
-    })
+      },
+    });
   }
 }

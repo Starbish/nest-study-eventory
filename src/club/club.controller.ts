@@ -6,14 +6,14 @@ import { ClubInfoDto } from './dto/club-info.dto';
 @Controller('clubs')
 @ApiTags('Club API')
 export class ClubController {
-    constructor(private readonly clubService: ClubService) {}
+  constructor(private readonly clubService: ClubService) {}
 
-    @Get(':clubId')
-    @ApiOperation({ summary: '클럽 정보를 조회합니다.' })
-    @ApiOkResponse({ type: ClubInfoDto })
-    async getClubInfo(
-        @Param('clubId', ParseIntPipe) clubId: number,
-    ) : Promise<ClubInfoDto> {
-        return this.clubService.getClubInfo(clubId);
-    }
+  @Get(':clubId')
+  @ApiOperation({ summary: '클럽 정보를 조회합니다.' })
+  @ApiOkResponse({ type: ClubInfoDto })
+  async getClubInfo(
+    @Param('clubId', ParseIntPipe) clubId: number,
+  ): Promise<ClubInfoDto> {
+    return this.clubService.getClubInfo(clubId);
+  }
 }
