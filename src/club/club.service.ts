@@ -8,6 +8,8 @@ import { ClubRepository } from './club.repository';
 import { UserBaseInfo } from 'src/auth/type/user-base-info.type';
 import { CreateClubPayload } from './payload/create-club.payload';
 import { CreateClubData } from './type/create-club-data.type';
+import { PatchClubPayload } from './payload/patch-club.payload';
+import { UpdateClubData } from './type/update-club-data.type';
 
 @Injectable()
 export class ClubService {
@@ -39,6 +41,28 @@ export class ClubService {
     };
 
     const result = await this.clubRepository.createClub(user, data);
+    return ClubInfoDto.from(result);
+  }
+
+  async patchClub(
+    user: UserBaseInfo,
+    clubId: number,
+    payload: PatchClubPayload,
+  ): Promise<ClubInfoDto> {
+    const event = await this.clubRepository.findClubByIndex(clubId);
+
+    if(!event)
+      throw new NotFoundException("클럽이 존재하지 않습니다.");
+
+    if(event.ownerId != user.id)
+      throw new ConflictException("클럽장만 클럽 정보를 수정할 수 있습니다.");
+
+    const data: UpdateClubData = {
+      title: payload.title,
+      description: payload.description,
+    };
+
+    const result = await this.clubRepository.updateClubInfo(clubId, data);
     return ClubInfoDto.from(result);
   }
 }
