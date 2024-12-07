@@ -5,6 +5,7 @@ import { ClubInfoData } from './type/club-info-data.type';
 import { UserBaseInfo } from 'src/auth/type/user-base-info.type';
 import { CreateClubData } from './type/create-club-data.type';
 import { ClubJoinState } from '@prisma/client';
+import { UpdateClubData } from './type/update-club-data.type';
 
 @Injectable()
 export class ClubRepository {
@@ -44,10 +45,39 @@ export class ClubRepository {
     });
   }
 
+  async updateClubInfo(
+    clubId: number,
+    data: UpdateClubData
+  ): Promise<ClubInfoData> {
+    return this.prisma.club.update({
+      where: {
+        id: clubId,
+      },
+      data: {
+        title: data.title,
+        description: data.description,
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        ownerId: true,
+      }
+    });
+  }
+
   async findClubByTitle(title: string): Promise<ClubInfoData | null> {
     return this.prisma.club.findFirst({
       where: {
         title,
+      },
+    });
+  }
+
+  async findClubByIndex(id: number): Promise<ClubInfoData | null> {
+    return this.prisma.club.findFirst({
+      where: {
+        id,
       },
     });
   }
