@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { ClubInfoDto } from './dto/club-info.dto';
 import { PrismaService } from 'src/common/services/prisma.service';
 import { ClubInfoData } from './type/club-info-data.type';
-import { UserBaseInfo } from 'src/auth/type/user-base-info.type';
 import { CreateClubData } from './type/create-club-data.type';
 import { ClubJoinState } from '@prisma/client';
 import { UpdateClubData } from './type/update-club-data.type';
@@ -20,18 +19,18 @@ export class ClubRepository {
   }
 
   async createClub(
-    user: UserBaseInfo,
+    userId: number,
     data: CreateClubData,
   ): Promise<ClubInfoData> {
     return this.prisma.club.create({
       data: {
         title: data.title,
         description: data.description,
-        ownerId: user.id,
+        ownerId: userId,
         clubJoin: {
           create: {
             // 클럽장은 별도의 심사가 당연히 필요 없다
-            userId: user.id,
+            userId: userId,
             state: ClubJoinState.Accepted,
           },
         },
@@ -66,6 +65,19 @@ export class ClubRepository {
     });
   }
 
+  async joinClub(
+    userId: number,
+    clubId: number,
+  ): Promise<void> {
+    await this.prisma.clubJoin.create({
+      data: {
+        userId: userId,
+        clubId: clubId,
+        state: ClubJoinState.Applied,
+      }
+    });
+  }
+
   async findClubByTitle(title: string): Promise<ClubInfoData | null> {
     return this.prisma.club.findFirst({
       where: {
@@ -79,6 +91,17 @@ export class ClubRepository {
       where: {
         id,
       },
+    });
+  }
+
+  async getUserJoinState(id: number): Promise<{state: ClubJoinState} | null> {
+    return this.prisma.clubJoin.findUnique({
+      where: {
+        id: id
+      },
+      select: {
+        state: true,
+      }
     });
   }
 }
