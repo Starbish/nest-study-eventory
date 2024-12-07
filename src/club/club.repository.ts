@@ -75,6 +75,19 @@ export class ClubRepository {
     });
   }
 
+  async leaveClub(
+    userId: number,
+    clubId: number,
+  ): Promise<void> {
+    await this.prisma.clubJoin.create({
+      data: {
+        userId: userId,
+        clubId: clubId,
+        state: ClubJoinState.Applied,
+      }
+    });
+  }
+
   async findClubByTitle(title: string): Promise<ClubInfoData | null> {
     return this.prisma.club.findFirst({
       where: {

@@ -50,11 +50,11 @@ export class ClubService {
     clubId: number,
     payload: PatchClubPayload,
   ): Promise<ClubInfoDto> {
-    const event = await this.clubRepository.findClubByIndex(clubId);
+    const club = await this.clubRepository.findClubByIndex(clubId);
 
-    if (!event) throw new NotFoundException('클럽이 존재하지 않습니다.');
+    if (!club) throw new NotFoundException('클럽이 존재하지 않습니다.');
 
-    if (event.ownerId != user.id)
+    if (club.ownerId != user.id)
       throw new ConflictException('클럽장만 클럽 정보를 수정할 수 있습니다.');
 
     const data: UpdateClubData = {
@@ -66,7 +66,10 @@ export class ClubService {
     return ClubInfoDto.from(result);
   }
 
-  async joinClub(user: UserBaseInfo, clubId: number): Promise<void> {
+  async joinClub(
+    user: UserBaseInfo, 
+    clubId: number
+  ): Promise<void> {
     const club = await this.clubRepository.findClubByIndex(clubId);
     if (!club) throw new NotFoundException('존재하지 않는 클럽 ID입니다.');
 
@@ -76,6 +79,11 @@ export class ClubService {
     else if (joinState?.state === ClubJoinState.Applied)
       throw new ConflictException('이미 가입 신청한 클럽입니다.');
 
-    await this.clubRepository.joinClub(user.id, clubId);
+    const joinState = await this.clubRepository.getUserJoinState(user.id);
+    // Accepted 상태이든, Applied 상태이든 결국 할 것은 row를 삭제하는 것
+    if(!joinState)
+      throw new NotFoundException("클럽에 속해있지 않거나, 아직 가입 신청하지 않은 클럽입니다.");
+    
+    await this.clubRepository.leaveClub(user.id, clubId);
   }
 }
