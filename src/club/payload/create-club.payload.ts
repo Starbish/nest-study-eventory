@@ -4,6 +4,7 @@ import {
   IsArray,
   IsDate,
   IsInt,
+  IsOptional,
   IsPositive,
   IsString,
   Min,
@@ -26,6 +27,7 @@ export class CreateClubPayload {
   title!: string;
 
   @IsString()
+  @IsOptional()
   @ApiPropertyOptional({
     description: '클럽 설명',
     type: String,
