@@ -79,11 +79,6 @@ export class ClubService {
     else if (joinState?.state === ClubJoinState.Applied)
       throw new ConflictException('이미 가입 신청한 클럽입니다.');
 
-    const joinState = await this.clubRepository.getUserJoinState(user.id);
-    // Accepted 상태이든, Applied 상태이든 결국 할 것은 row를 삭제하는 것
-    if(!joinState)
-      throw new NotFoundException("클럽에 속해있지 않거나, 아직 가입 신청하지 않은 클럽입니다.");
-    
     await this.clubRepository.leaveClub(user.id, clubId);
   }
 }
