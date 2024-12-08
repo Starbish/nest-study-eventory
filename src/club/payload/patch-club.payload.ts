@@ -1,31 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsArray,
-  IsDate,
-  IsInt,
   IsOptional,
-  IsPositive,
   IsString,
-  Min,
-  ValidateIf,
 } from 'class-validator';
-import { ValidationOptions } from 'joi';
-
-export function IsOptionalNonNullable(data?: {
-  nullable: boolean;
-  validationOptions?: ValidationOptions;
-}) {
-  const { nullable = false, validationOptions = undefined } = data || {};
-
-  if (nullable) {
-    // IsOptional allows null
-    return IsOptional(validationOptions);
-  }
-
-  return ValidateIf((ob: any, v: any) => {
-    return v !== undefined;
-  }, validationOptions);
-}
+import { IsOptionalNonNullable } from 'src/common/decorator';
 
 export class PatchClubPayload {
   @IsString()

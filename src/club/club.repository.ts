@@ -47,7 +47,7 @@ export class ClubRepository {
 
   async updateClubInfo(
     clubId: number,
-    data: UpdateClubData
+    data: UpdateClubData,
   ): Promise<ClubInfoData> {
     return this.prisma.club.update({
       where: {
@@ -62,7 +62,7 @@ export class ClubRepository {
         title: true,
         description: true,
         ownerId: true,
-      }
+      },
     });
   }
 
