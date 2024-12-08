@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -69,7 +70,7 @@ export class ClubController {
 
   // feat/4
   @Post(':clubId/join')
-  @ApiOperation({ summary: '클럽에 참가를 신청합니다. ' })
+  @ApiOperation({ summary: '클럽에 참가를 신청합니다.' })
   @ApiNoContentResponse()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -78,5 +79,18 @@ export class ClubController {
     @CurrentUser() user: UserBaseInfo,
   ): Promise<void> {
     return this.clubService.joinClub(user, clubId);
+  }
+
+  // feat/5
+  @Delete(':clubId/leave')
+  @ApiOperation({ summary: '클럽을 탈퇴합니다.' })
+  @ApiNoContentResponse()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async leaveClub(
+    @Param('clubId', ParseIntPipe) clubId: number,
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<void> {
+    return this.clubService.leaveClub(user, clubId);
   }
 }
