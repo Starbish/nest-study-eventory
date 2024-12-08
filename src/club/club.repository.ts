@@ -65,16 +65,13 @@ export class ClubRepository {
     });
   }
 
-  async joinClub(
-    userId: number,
-    clubId: number,
-  ): Promise<void> {
+  async joinClub(userId: number, clubId: number): Promise<void> {
     await this.prisma.clubJoin.create({
       data: {
         userId: userId,
         clubId: clubId,
         state: ClubJoinState.Applied,
-      }
+      },
     });
   }
 
@@ -94,14 +91,14 @@ export class ClubRepository {
     });
   }
 
-  async getUserJoinState(id: number): Promise<{state: ClubJoinState} | null> {
+  async getUserJoinState(id: number): Promise<{ state: ClubJoinState } | null> {
     return this.prisma.clubJoin.findUnique({
       where: {
-        id: id
+        id: id,
       },
       select: {
         state: true,
-      }
+      },
     });
   }
 }

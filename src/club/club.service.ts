@@ -10,6 +10,7 @@ import { CreateClubPayload } from './payload/create-club.payload';
 import { CreateClubData } from './type/create-club-data.type';
 import { PatchClubPayload } from './payload/patch-club.payload';
 import { UpdateClubData } from './type/update-club-data.type';
+import { ClubJoinState } from '@prisma/client';
 
 @Injectable()
 export class ClubService {
@@ -65,24 +66,15 @@ export class ClubService {
     return ClubInfoDto.from(result);
   }
 
-  async joinClub(
-    user: UserBaseInfo,
-    clubId: number,
-  ): Promise<void> {
-    const joinState = await this.clubRepository.getUserJoinState(user.id);
-    // 이렇게 enum 값을 하드 코딩하는 것보다, enum을 직접 사용하는 게 더 나은 방법같은데 방법을 잘 모르겠습니다.
-    // Prisma Client 를 가지고 오면 해결되긴 하는데, repository와 분리한 목적이 사라지는 것 같고,
-    // 이렇게 하드 코딩하게 되면 유지보수 측면에서 아쉽습니다..
-    // 더 나은 방법이 있을까요?
-    if(joinState?.state === "Accepted")
-      throw new ConflictException("이미 가입한 클럽입니다.")
-    
-    else if(joinState?.state === "Applied")
-      throw new ConflictException("이미 가입 신청한 클럽입니다.");
-
+  async joinClub(user: UserBaseInfo, clubId: number): Promise<void> {
     const club = await this.clubRepository.findClubByIndex(clubId);
-    if(!club)
-      throw new NotFoundException("존재하지 않는 클럽 ID입니다.");
+    if (!club) throw new NotFoundException('존재하지 않는 클럽 ID입니다.');
+
+    const joinState = await this.clubRepository.getUserJoinState(user.id);
+    if (joinState?.state === ClubJoinState.Accepted)
+      throw new ConflictException('이미 가입한 클럽입니다.');
+    else if (joinState?.state === ClubJoinState.Applied)
+      throw new ConflictException('이미 가입 신청한 클럽입니다.');
 
     await this.clubRepository.joinClub(user.id, clubId);
   }
