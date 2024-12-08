@@ -51,11 +51,10 @@ export class ClubService {
   ): Promise<ClubInfoDto> {
     const event = await this.clubRepository.findClubByIndex(clubId);
 
-    if(!event)
-      throw new NotFoundException("클럽이 존재하지 않습니다.");
+    if (!event) throw new NotFoundException('클럽이 존재하지 않습니다.');
 
-    if(event.ownerId != user.id)
-      throw new ConflictException("클럽장만 클럽 정보를 수정할 수 있습니다.");
+    if (event.ownerId != user.id)
+      throw new ConflictException('클럽장만 클럽 정보를 수정할 수 있습니다.');
 
     const data: UpdateClubData = {
       title: payload.title,
