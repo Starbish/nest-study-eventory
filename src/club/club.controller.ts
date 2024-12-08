@@ -80,4 +80,6 @@ export class ClubController {
   ): Promise<void> {
     return this.clubService.joinClub(user, clubId);
   }
+
+  // feat/5
 }

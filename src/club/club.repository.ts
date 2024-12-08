@@ -76,11 +76,12 @@ export class ClubRepository {
   }
 
   async leaveClub(userId: number, clubId: number): Promise<void> {
-    await this.prisma.clubJoin.create({
-      data: {
-        userId: userId,
-        clubId: clubId,
-        state: ClubJoinState.Applied,
+    await this.prisma.clubJoin.delete({
+      where: {
+        userId_clubId: {
+          userId,
+          clubId,
+        },
       },
     });
   }
