@@ -90,7 +90,7 @@ export class ClubRepository {
       },
     });
   }
-
+  
   async getUserJoinState(id: number): Promise<{ state: ClubJoinState } | null> {
     return this.prisma.clubJoin.findUnique({
       where: {
