@@ -52,7 +52,7 @@ export class ClubService {
   ): Promise<ClubInfoDto> {
     const club = await this.clubRepository.findClubByIndex(clubId);
 
-    if (!club) throw new NotFoundException('클럽이 존재하지 않습니다.');
+    if (!club) throw new NotFoundException('존재하지 않는 클럽 ID입니다.');
 
     if (club.ownerId != user.id)
       throw new ConflictException('클럽장만 클럽 정보를 수정할 수 있습니다.');
@@ -66,10 +66,7 @@ export class ClubService {
     return ClubInfoDto.from(result);
   }
 
-  async joinClub(
-    user: UserBaseInfo, 
-    clubId: number
-  ): Promise<void> {
+  async joinClub(user: UserBaseInfo, clubId: number): Promise<void> {
     const club = await this.clubRepository.findClubByIndex(clubId);
     if (!club) throw new NotFoundException('존재하지 않는 클럽 ID입니다.');
 

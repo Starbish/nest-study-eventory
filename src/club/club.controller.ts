@@ -70,7 +70,7 @@ export class ClubController {
 
   // feat/4
   @Post(':clubId/join')
-  @ApiOperation({ summary: '클럽에 참가를 신청합니다.'})
+  @ApiOperation({ summary: '클럽에 참가를 신청합니다.' })
   @ApiNoContentResponse()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

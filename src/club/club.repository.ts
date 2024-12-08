@@ -75,16 +75,13 @@ export class ClubRepository {
     });
   }
 
-  async leaveClub(
-    userId: number,
-    clubId: number,
-  ): Promise<void> {
+  async leaveClub(userId: number, clubId: number): Promise<void> {
     await this.prisma.clubJoin.create({
       data: {
         userId: userId,
         clubId: clubId,
         state: ClubJoinState.Applied,
-      }
+      },
     });
   }
 
