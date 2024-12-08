@@ -82,4 +82,15 @@ export class ClubController {
   }
 
   // feat/5
+  @Delete(':clubId/leave')
+  @ApiOperation({ summary: '클럽을 탈퇴합니다.' })
+  @ApiNoContentResponse()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async leaveClub(
+    @Param('clubId', ParseIntPipe) clubId: number,
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<void> {
+    return this.clubService.leaveClub(user, clubId);
+  }
 }

@@ -11,6 +11,8 @@ import { CreateClubData } from './type/create-club-data.type';
 import { PatchClubPayload } from './payload/patch-club.payload';
 import { UpdateClubData } from './type/update-club-data.type';
 import { ClubJoinState } from '@prisma/client';
+import { EventListDto } from 'src/event/dto/event.dto';
+import { EventData } from 'src/event/type/event-data.type';
 
 @Injectable()
 export class ClubService {
@@ -51,7 +53,6 @@ export class ClubService {
     payload: PatchClubPayload,
   ): Promise<ClubInfoDto> {
     const club = await this.clubRepository.findClubByIndex(clubId);
-
     if (!club) throw new NotFoundException('존재하지 않는 클럽 ID입니다.');
 
     if (club.ownerId != user.id)
@@ -76,6 +77,41 @@ export class ClubService {
     else if (joinState?.state === ClubJoinState.Applied)
       throw new ConflictException('이미 가입 신청한 클럽입니다.');
 
+    await this.clubRepository.leaveClub(user.id, clubId);
+  }
+
+  async leaveClub(user: UserBaseInfo, clubId: number): Promise<void> {
+    const club = await this.clubRepository.findClubByIndex(clubId);
+    if (!club) throw new NotFoundException('존재하지 않는 클럽 ID입니다.');
+
+    const joinState = await this.clubRepository.getUserJoinState(user.id);
+    // Accepted 상태이든, Applied 상태이든 결국 할 것은 row를 삭제하는 것
+    if (!joinState)
+      throw new NotFoundException(
+        '클럽에 속해있지 않거나, 아직 가입 신청하지 않은 클럽입니다.',
+      );
+
+    if (user.id === club.ownerId)
+      throw new ConflictException('클럽장은 클럽에서 탈퇴할 수 없습니다.');
+
+    // 클럽 전용 모임에 가입된 상태라면, 그 모임을 모두 불러온다
+    const list: EventData[] = await this.clubRepository.getUserClubEvents(
+      user.id,
+      clubId,
+    );
+    for (let i = 0; i < list.length; i++) {
+      // 해당 모임이 이미 시작한 모임이라면, 어쩔 수 없다.
+      if (list[i].startTime < new Date()) continue;
+
+      // 해당 모임이 시작 전이라면, 아직 돌이킬 수 있다.
+      // 모임의 호스트가 유저라면, 모임을 삭제한다.
+      if (list[i].hostId === user.id)
+        await this.clubRepository.disbandClubEvent(list[i].id);
+      // 모임 참여자라면, 모임에서 나옴
+      else await this.clubRepository.leaveClubEvent(user.id, list[i].id);
+    }
+
+    // clubJoin row 삭제
     await this.clubRepository.leaveClub(user.id, clubId);
   }
 }

@@ -5,6 +5,7 @@ import { ClubInfoData } from './type/club-info-data.type';
 import { CreateClubData } from './type/create-club-data.type';
 import { ClubJoinState } from '@prisma/client';
 import { UpdateClubData } from './type/update-club-data.type';
+import { EventData } from 'src/event/type/event-data.type';
 
 @Injectable()
 export class ClubRepository {
@@ -109,6 +110,58 @@ export class ClubRepository {
       },
       select: {
         state: true,
+      },
+    });
+  }
+
+  /* 아래 코드들은 Event db와 연관된 것들 */
+  // 클럽의 모임들 중에서 user가 가입한 모든 event를 반환함
+  async getUserClubEvents(
+    userId: number,
+    clubId: number,
+  ): Promise<EventData[]> {
+    return this.prisma.event.findMany({
+      where: {
+        clubId,
+        eventJoin: {
+          some: {
+            userId,
+          },
+        },
+      },
+      select: {
+        id: true,
+        hostId: true,
+        title: true,
+        description: true,
+        categoryId: true,
+        eventCity: {
+          select: {
+            cityId: true,
+          },
+        },
+        startTime: true,
+        endTime: true,
+        maxPeople: true,
+      },
+    });
+  }
+
+  async disbandClubEvent(eventId: number) {
+    await this.prisma.event.delete({
+      where: {
+        id: eventId,
+      },
+    });
+  }
+
+  async leaveClubEvent(userId: number, eventId: number) {
+    await this.prisma.eventJoin.delete({
+      where: {
+        eventId_userId: {
+          userId,
+          eventId,
+        },
       },
     });
   }
