@@ -10,6 +10,7 @@ import { CreateClubPayload } from './payload/create-club.payload';
 import { CreateClubData } from './type/create-club-data.type';
 import { PatchClubPayload } from './payload/patch-club.payload';
 import { UpdateClubData } from './type/update-club-data.type';
+import { ClubJoinState } from '@prisma/client';
 
 @Injectable()
 export class ClubService {
@@ -40,7 +41,7 @@ export class ClubService {
       description: payload.description,
     };
 
-    const result = await this.clubRepository.createClub(user, data);
+    const result = await this.clubRepository.createClub(user.id, data);
     return ClubInfoDto.from(result);
   }
 
@@ -63,5 +64,18 @@ export class ClubService {
 
     const result = await this.clubRepository.updateClubInfo(clubId, data);
     return ClubInfoDto.from(result);
+  }
+
+  async joinClub(user: UserBaseInfo, clubId: number): Promise<void> {
+    const club = await this.clubRepository.findClubByIndex(clubId);
+    if (!club) throw new NotFoundException('존재하지 않는 클럽 ID입니다.');
+
+    const joinState = await this.clubRepository.getUserJoinState(user.id);
+    if (joinState?.state === ClubJoinState.Accepted)
+      throw new ConflictException('이미 가입한 클럽입니다.');
+    else if (joinState?.state === ClubJoinState.Applied)
+      throw new ConflictException('이미 가입 신청한 클럽입니다.');
+
+    await this.clubRepository.joinClub(user.id, clubId);
   }
 }
