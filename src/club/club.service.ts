@@ -13,10 +13,6 @@ import { UpdateClubData } from './type/update-club-data.type';
 import { ClubJoinState } from '@prisma/client';
 import { EventListDto } from 'src/event/dto/event.dto';
 import { EventData } from 'src/event/type/event-data.type';
-import {
-  LeaveClubData,
-  LeaveClubEventAction,
-} from './type/leave-club-data.type';
 
 @Injectable()
 export class ClubService {
@@ -98,34 +94,7 @@ export class ClubService {
     if (user.id === club.ownerId)
       throw new ConflictException('클럽장은 클럽에서 탈퇴할 수 없습니다.');
 
-    // 클럽 전용 모임에 가입된 상태라면, 그 모임을 모두 불러온다
-    const list: EventData[] = await this.clubRepository.getUserClubEvents(
-      user.id,
-      clubId,
-    );
-
-    // 탈퇴하려는 클럽의 전용 모임에 가입한 게 있는 경우
-    // 아직 시작하지 않은 모임에 대해서만 탈퇴 및 해체 처리를 진행한다.
-    const tasks: LeaveClubData[] = list
-      .filter((event) => event.startTime > new Date())
-      .map((event) => {
-        // 클럽을 탈퇴하려는 유저가 해당 모임의 호스트인 경우
-        // 모임이 아직 시작하지 않았으므로 해체한다.
-        if (event.hostId === user.id) {
-          return {
-            eventId: event.id,
-            action: LeaveClubEventAction.LeaveAndDisband,
-          };
-          // 모임 호스트가 아닌 경우에는 그냥 탈퇴하고 나온다.
-        } else {
-          return {
-            eventId: event.id,
-            action: LeaveClubEventAction.Leave,
-          };
-        }
-      });
-
-    // clubJoin row 삭제
-    await this.clubRepository.leaveClub(user.id, tasks, clubId);
+    // club의 user와 관련된 모든 데이터를 지운다.
+    await this.clubRepository.leaveClub(user.id, clubId);
   }
 }

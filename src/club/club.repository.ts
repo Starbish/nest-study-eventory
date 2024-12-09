@@ -6,10 +6,6 @@ import { CreateClubData } from './type/create-club-data.type';
 import { ClubJoinState } from '@prisma/client';
 import { UpdateClubData } from './type/update-club-data.type';
 import { EventData } from 'src/event/type/event-data.type';
-import {
-  LeaveClubData,
-  LeaveClubEventAction,
-} from './type/leave-club-data.type';
 
 @Injectable()
 export class ClubRepository {
@@ -82,37 +78,66 @@ export class ClubRepository {
 
   async leaveClub(
     userId: number,
-    tasks: LeaveClubData[],
     clubId: number,
   ): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
-      // 관련된 Club 전용 Event에 대한 데이터 삭제
-      for (let i = 0; i < tasks.length; i++) {
-        // eventJoin row 삭제는 공통적으로 이루어지는 필요한 처리임
-        await tx.eventJoin.delete({
-          where: {
-            eventId_userId: {
-              eventId: tasks[i].eventId,
+      // eventJoin
+      // eventCity
+      // event
+      // clubJoin
+      
+      // Event host의 경우 Event disband
+      // Event member의 경우 본인만 빠져나감
+
+      // eventJoin 삭제 (이벤트 시작 전)
+      // 호스트일 때, 아닐 때 동시에 처리 필요
+      await tx.eventJoin.deleteMany({
+        where: {
+          OR: [
+            // 모임의 멤버일 때
+            {
+              // eventJoin의 userId 값을 조건으로
               userId: userId,
+              event: {
+                startTime: {
+                  gt: new Date(),
+                },
+              },
+            },
+            // 모임의 호스트일 때
+            {
+              event: {
+                hostId: userId,
+                startTime: {
+                  gt: new Date(),
+                },
+              },
+            },
+          ],
+        },
+      });
+
+      // 호스트일 때만 지우면 됨
+      await tx.eventCity.deleteMany({
+        where: {
+          event: {
+            hostId: userId,
+            startTime: {
+              gt: new Date(),
             },
           },
-        });
+        },
+      });
 
-        // 모임 호스트일 경우 아예 모임을 해체해버림
-        if (tasks[i].action === LeaveClubEventAction.LeaveAndDisband) {
-          // eventJoin 삭제는 위에서 이미 함
-          await tx.eventCity.deleteMany({
-            where: {
-              eventId: tasks[i].eventId,
-            },
-          });
-          await tx.event.delete({
-            where: {
-              id: tasks[i].eventId,
-            },
-          });
-        }
-      }
+      // 호스트일 때만 지우면 됨
+      await tx.event.deleteMany({
+        where: {
+          hostId: userId,
+          startTime: {
+            gt: new Date(),
+          },
+        },
+      });
 
       // clubJoin row 삭제
       await tx.clubJoin.delete({
@@ -149,58 +174,6 @@ export class ClubRepository {
       },
       select: {
         state: true,
-      },
-    });
-  }
-
-  /* 아래 코드들은 Event db와 연관된 것들 */
-  // 클럽의 모임들 중에서 user가 가입한 모든 event를 반환함
-  async getUserClubEvents(
-    userId: number,
-    clubId: number,
-  ): Promise<EventData[]> {
-    return this.prisma.event.findMany({
-      where: {
-        clubId,
-        eventJoin: {
-          some: {
-            userId,
-          },
-        },
-      },
-      select: {
-        id: true,
-        hostId: true,
-        title: true,
-        description: true,
-        categoryId: true,
-        eventCity: {
-          select: {
-            cityId: true,
-          },
-        },
-        startTime: true,
-        endTime: true,
-        maxPeople: true,
-      },
-    });
-  }
-
-  async disbandClubEvent(eventId: number) {
-    await this.prisma.event.delete({
-      where: {
-        id: eventId,
-      },
-    });
-  }
-
-  async leaveClubEvent(userId: number, eventId: number) {
-    await this.prisma.eventJoin.delete({
-      where: {
-        eventId_userId: {
-          userId,
-          eventId,
-        },
       },
     });
   }
