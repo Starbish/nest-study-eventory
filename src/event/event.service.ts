@@ -38,13 +38,26 @@ export class EventService {
     }
 
     if (payload.startTime >= payload.endTime) {
-      throw new BadRequestException('시작 시간은 종료 시간보다 빨라야 합니다 ');
+      throw new BadRequestException('시작 시간은 종료 시간보다 빨라야 합니다.');
     }
 
     if (payload.startTime < new Date()) {
       throw new BadRequestException(
         '모임 시작 시간은 현재 시간 이후여야 합니다.',
       );
+    }
+
+    // club 관련 추가 조건
+    if (payload.clubId) {
+      // 클럽 전용 모임을 만든다면, 만드는 사람은 클럽원이어야 한다
+      const isInClub = await this.eventRepository.isUserInClub(
+        user.id,
+        payload.clubId,
+      );
+      if (!isInClub)
+        throw new ForbiddenException(
+          '클럽 전용 모임을 개설하기 위해서는 클럽에 속해야 합니다.',
+        );
     }
 
     const data: CreateEventData = {
@@ -56,6 +69,7 @@ export class EventService {
       startTime: payload.startTime,
       endTime: payload.endTime,
       maxPeople: payload.maxPeople,
+      clubId: payload.clubId,
     };
 
     const event = await this.eventRepository.createEvent(data);
@@ -63,8 +77,11 @@ export class EventService {
     return EventDto.from(event);
   }
 
-  async getEvents(query: EventQuery): Promise<EventListDto> {
-    const events = await this.eventRepository.getEvents(query);
+  async getEvents(
+    user: UserBaseInfo,
+    query: EventQuery,
+  ): Promise<EventListDto> {
+    const events = await this.eventRepository.getEvents(user.id, query);
 
     return EventListDto.from(events);
   }
@@ -75,11 +92,26 @@ export class EventService {
     return EventListDto.from(events);
   }
 
-  async getEventById(eventId: number): Promise<EventDetailDto> {
+  async getEventById(
+    user: UserBaseInfo,
+    eventId: number,
+  ): Promise<EventDetailDto> {
     const event = await this.eventRepository.findEventDetailById(eventId);
 
     if (!event) {
       throw new NotFoundException('모임을 찾을 수 없습니다.');
+    }
+
+    // 조회하고자 하는 모임이 클럽 전용인 경우에 대해 검증
+    if (event.clubId) {
+      const isInClub = await this.eventRepository.isUserInClub(
+        user.id,
+        eventId,
+      );
+      if (!isInClub)
+        throw new ForbiddenException(
+          '클럽 전용 모임 정보를 조회하기 위해서는 클럽에 속해야 합니다.',
+        );
     }
 
     return EventDetailDto.from(event);
@@ -121,6 +153,18 @@ export class EventService {
 
     if (cities.length !== payload.cityIds.length) {
       throw new NotFoundException('도시를 찾을 수 없습니다.');
+    }
+
+    // 모임이 클럽 전용인 경우에 대해 검증
+    if (event.clubId) {
+      const isInClub = await this.eventRepository.isUserInClub(
+        user.id,
+        eventId,
+      );
+      if (!isInClub)
+        throw new ForbiddenException(
+          '클럽 전용 모임 정보를 수정하기 위해서는 클럽에 속해야 합니다.',
+        );
     }
 
     const data: UpdateEventData = {
@@ -197,6 +241,18 @@ export class EventService {
       }
     }
 
+    // 모임이 클럽 전용인 경우에 대해 검증
+    if (event.clubId) {
+      const isInClub = await this.eventRepository.isUserInClub(
+        user.id,
+        eventId,
+      );
+      if (!isInClub)
+        throw new ForbiddenException(
+          '클럽 전용 모임 정보를 수정하기 위해서는 클럽에 속해야 합니다.',
+        );
+    }
+
     const updatedEvent = await this.eventRepository.updateEvent(eventId, data);
 
     return EventDto.from(updatedEvent);
@@ -211,6 +267,18 @@ export class EventService {
 
     if (event.hostId !== user.id) {
       throw new ForbiddenException('모임 주최자만 삭제할 수 있습니다.');
+    }
+
+    // 모임이 클럽 전용인 경우에 대해 검증
+    if (event.clubId) {
+      const isInClub = await this.eventRepository.isUserInClub(
+        user.id,
+        eventId,
+      );
+      if (!isInClub)
+        throw new ForbiddenException(
+          '클럽 전용 모임을 삭제하기 위해서는 클럽에 속해야 합니다.',
+        );
     }
 
     await this.eventRepository.deleteEvent(eventId);
@@ -261,6 +329,18 @@ export class EventService {
 
     if (!participantsIds.includes(user.id)) {
       throw new ConflictException('참여하지 않은 모임입니다.');
+    }
+
+    // 모임이 클럽 전용인 경우에 대해 검증
+    if (event.clubId) {
+      const isInClub = await this.eventRepository.isUserInClub(
+        user.id,
+        eventId,
+      );
+      if (!isInClub)
+        throw new ForbiddenException(
+          '클럽 전용 모임에 참여하기 위해서는 클럽에 속해야 합니다.',
+        );
     }
 
     await this.eventRepository.leaveEvent(eventId, user.id);

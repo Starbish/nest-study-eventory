@@ -143,6 +143,7 @@ export class ClubRepository {
         startTime: true,
         endTime: true,
         maxPeople: true,
+        clubId: true,
       },
     });
   }

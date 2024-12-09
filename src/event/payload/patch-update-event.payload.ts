@@ -72,4 +72,13 @@ export class PatchUpdateEventPayload {
     type: Number,
   })
   maxPeople?: number | null;
+
+  // @IsInt()
+  // @IsPositive()
+  // @IsOptional()
+  // @ApiPropertyOptional({
+  //   description: '클럽 ID (클럽 전용인 경우에만 활성화)',
+  //   type: Number,
+  // })
+  // clubId?: number | null;
 }

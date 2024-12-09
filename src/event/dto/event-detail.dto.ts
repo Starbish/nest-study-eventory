@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { EventDetailData } from '../type/event-detail-data.type';
 import { ReviewDto } from '../../review/dto/review.dto';
 import { EventStatus } from '../enum/event.enum';
@@ -90,6 +90,12 @@ export class EventDetailDto {
   })
   reviews!: ReviewDto[];
 
+  @ApiPropertyOptional({
+    description: '클럽 ID (클럽 전용인 경우에만 활성화)',
+    type: Number,
+  })
+  clubId!: number | null;
+
   static from(data: EventDetailData): EventDetailDto {
     return {
       id: data.id,
@@ -112,6 +118,7 @@ export class EventDetailDto {
           : data.endTime < new Date()
             ? EventStatus.COMPLETED
             : EventStatus.ONGOING,
+      clubId: data.clubId,
     };
   }
 }
