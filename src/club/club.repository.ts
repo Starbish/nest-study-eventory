@@ -6,7 +6,10 @@ import { CreateClubData } from './type/create-club-data.type';
 import { ClubJoinState } from '@prisma/client';
 import { UpdateClubData } from './type/update-club-data.type';
 import { EventData } from 'src/event/type/event-data.type';
-import { LeaveClubData, LeaveClubEventAction } from './type/leave-club-data.type';
+import {
+  LeaveClubData,
+  LeaveClubEventAction,
+} from './type/leave-club-data.type';
 
 @Injectable()
 export class ClubRepository {
@@ -77,20 +80,32 @@ export class ClubRepository {
     });
   }
 
-  async leaveClub(userId: number, tasks: LeaveClubData[], clubId: number): Promise<void> {
+  async leaveClub(
+    userId: number,
+    tasks: LeaveClubData[],
+    clubId: number,
+  ): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
       // 관련된 Club 전용 Event에 대한 데이터 삭제
-      for(let i = 0; i < tasks.length; i++) {
-        if(tasks[i].action === LeaveClubEventAction.Leave) {
-          await tx.eventJoin.delete({
+      for (let i = 0; i < tasks.length; i++) {
+        // eventJoin row 삭제는 공통적으로 이루어지는 필요한 처리임
+        await tx.eventJoin.delete({
+          where: {
+            eventId_userId: {
+              eventId: tasks[i].eventId,
+              userId: userId,
+            },
+          },
+        });
+
+        // 모임 호스트일 경우 아예 모임을 해체해버림
+        if (tasks[i].action === LeaveClubEventAction.LeaveAndDisband) {
+          // eventJoin 삭제는 위에서 이미 함
+          await tx.eventCity.deleteMany({
             where: {
-              eventId_userId: {
-                eventId: tasks[i].eventId,
-                userId: userId,
-              },
+              eventId: tasks[i].eventId,
             },
           });
-        } else if(tasks[i].action === LeaveClubEventAction.LeaveAndDisband) {
           await tx.event.delete({
             where: {
               id: tasks[i].eventId,

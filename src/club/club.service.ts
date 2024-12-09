@@ -13,7 +13,10 @@ import { UpdateClubData } from './type/update-club-data.type';
 import { ClubJoinState } from '@prisma/client';
 import { EventListDto } from 'src/event/dto/event.dto';
 import { EventData } from 'src/event/type/event-data.type';
-import { LeaveClubData, LeaveClubEventAction } from './type/leave-club-data.type';
+import {
+  LeaveClubData,
+  LeaveClubEventAction,
+} from './type/leave-club-data.type';
 
 @Injectable()
 export class ClubService {
@@ -108,17 +111,17 @@ export class ClubService {
       .map((event) => {
         // 클럽을 탈퇴하려는 유저가 해당 모임의 호스트인 경우
         // 모임이 아직 시작하지 않았으므로 해체한다.
-        if(event.hostId === user.id) {
+        if (event.hostId === user.id) {
           return {
             eventId: event.id,
             action: LeaveClubEventAction.LeaveAndDisband,
-          }
-        // 모임 호스트가 아닌 경우에는 그냥 탈퇴하고 나온다.
+          };
+          // 모임 호스트가 아닌 경우에는 그냥 탈퇴하고 나온다.
         } else {
           return {
             eventId: event.id,
             action: LeaveClubEventAction.Leave,
-          }
+          };
         }
       });
 

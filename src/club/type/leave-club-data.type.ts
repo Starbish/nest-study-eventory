@@ -1,9 +1,9 @@
 export enum LeaveClubEventAction {
-    LeaveAndDisband,
-    Leave,
+  LeaveAndDisband,
+  Leave,
 }
 
 export type LeaveClubData = {
-    eventId: number;
-    action: LeaveClubEventAction;
+  eventId: number;
+  action: LeaveClubEventAction;
 };
