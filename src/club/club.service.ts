@@ -77,7 +77,7 @@ export class ClubService {
     else if (joinState?.state === ClubJoinState.Applied)
       throw new ConflictException('이미 가입 신청한 클럽입니다.');
 
-    await this.clubRepository.leaveClub(user.id, clubId);
+    await this.clubRepository.joinClub(user.id, clubId);
   }
 
   async leaveClub(user: UserBaseInfo, clubId: number): Promise<void> {
@@ -94,24 +94,7 @@ export class ClubService {
     if (user.id === club.ownerId)
       throw new ConflictException('클럽장은 클럽에서 탈퇴할 수 없습니다.');
 
-    // 클럽 전용 모임에 가입된 상태라면, 그 모임을 모두 불러온다
-    const list: EventData[] = await this.clubRepository.getUserClubEvents(
-      user.id,
-      clubId,
-    );
-    for (let i = 0; i < list.length; i++) {
-      // 해당 모임이 이미 시작한 모임이라면, 어쩔 수 없다.
-      if (list[i].startTime < new Date()) continue;
-
-      // 해당 모임이 시작 전이라면, 아직 돌이킬 수 있다.
-      // 모임의 호스트가 유저라면, 모임을 삭제한다.
-      if (list[i].hostId === user.id)
-        await this.clubRepository.disbandClubEvent(list[i].id);
-      // 모임 참여자라면, 모임에서 나옴
-      else await this.clubRepository.leaveClubEvent(user.id, list[i].id);
-    }
-
-    // clubJoin row 삭제
+    // club의 user와 관련된 모든 데이터를 지운다.
     await this.clubRepository.leaveClub(user.id, clubId);
   }
 }
