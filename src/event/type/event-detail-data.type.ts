@@ -19,4 +19,5 @@ export type EventDetailData = {
     };
   }[];
   review: ReviewData[];
+  clubId: number | null;
 };

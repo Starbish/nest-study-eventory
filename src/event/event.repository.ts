@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../common/services/prisma.service';
 import { CreateEventData } from './type/create-event-data.type';
-import { Category, City } from '@prisma/client';
+import { Category, City, ClubJoinState } from '@prisma/client';
 import { EventDetailData } from './type/event-detail-data.type';
 import { EventQuery } from './query/event.query';
 import { EventData } from './type/event-data.type';
@@ -21,6 +21,7 @@ export class EventRepository {
         startTime: data.startTime,
         endTime: data.endTime,
         maxPeople: data.maxPeople,
+        clubId: data.clubId,
         eventCity: {
           createMany: {
             data: data.cityIds.map((cityId) => ({
@@ -43,6 +44,7 @@ export class EventRepository {
         startTime: true,
         endTime: true,
         maxPeople: true,
+        clubId: true,
       },
     });
   }
@@ -84,6 +86,7 @@ export class EventRepository {
         startTime: true,
         endTime: true,
         maxPeople: true,
+        clubId: true,
       },
     });
   }
@@ -145,11 +148,12 @@ export class EventRepository {
         startTime: true,
         endTime: true,
         maxPeople: true,
+        clubId: true,
       },
     });
   }
 
-  async getEvents(query: EventQuery): Promise<EventData[]> {
+  async getEvents(userId: number, query: EventQuery): Promise<EventData[]> {
     return this.prisma.event.findMany({
       where: {
         categoryId: query.categoryId,
@@ -162,6 +166,25 @@ export class EventRepository {
           id: query.hostId,
           deletedAt: null,
         },
+        // club_id가 null이 아닐 때만 작동해야 하므로, OR 을 이용하여 구현함
+        OR: [
+          // club_id 가 null 이어도 가져와야 하고
+          {
+            clubId: null,
+          },
+          // club_id 가 null 이 아니라면, 요청하는 유저가 권한이 있는지를 확인해야 함
+          {
+            clubId: { not: null },
+            club: {
+              clubJoin: {
+                some: {
+                  userId: userId,
+                  state: ClubJoinState.Accepted,
+                },
+              },
+            },
+          },
+        ],
       },
       select: {
         id: true,
@@ -177,6 +200,7 @@ export class EventRepository {
         startTime: true,
         endTime: true,
         maxPeople: true,
+        clubId: true,
       },
     });
   }
@@ -204,6 +228,7 @@ export class EventRepository {
         startTime: true,
         endTime: true,
         maxPeople: true,
+        clubId: true,
       },
     });
   }
@@ -263,6 +288,7 @@ export class EventRepository {
         startTime: true,
         endTime: true,
         maxPeople: true,
+        clubId: true,
         eventJoin: {
           where: {
             user: {
@@ -290,5 +316,31 @@ export class EventRepository {
         },
       },
     });
+  }
+
+  /* Club 관련 */
+  async isUserInClub(userId: number, clubId: number): Promise<boolean> {
+    const result = await this.prisma.clubJoin.findUnique({
+      where: {
+        userId_clubId: {
+          userId,
+          clubId,
+        },
+        state: ClubJoinState.Accepted,
+      },
+    });
+
+    return !!result;
+  }
+
+  async isUserClubOwner(userId: number, clubId: number): Promise<boolean> {
+    const result = await this.prisma.club.findUnique({
+      where: {
+        id: clubId,
+        ownerId: userId,
+      },
+    });
+
+    return !!result;
   }
 }

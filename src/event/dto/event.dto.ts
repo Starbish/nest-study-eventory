@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { EventData } from '../type/event-data.type';
 
 export class EventDto {
@@ -56,6 +56,12 @@ export class EventDto {
   })
   maxPeople!: number;
 
+  @ApiPropertyOptional({
+    description: '클럽 ID (클럽 전용인 경우에만 활성화)',
+    type: Number,
+  })
+  clubId!: number | null;
+
   static from(data: EventData): EventDto {
     return {
       id: data.id,
@@ -67,6 +73,7 @@ export class EventDto {
       startTime: data.startTime,
       endTime: data.endTime,
       maxPeople: data.maxPeople,
+      clubId: data.clubId,
     };
   }
 
