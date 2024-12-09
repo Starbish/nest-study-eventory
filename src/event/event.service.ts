@@ -155,18 +155,6 @@ export class EventService {
       throw new NotFoundException('도시를 찾을 수 없습니다.');
     }
 
-    // 모임이 클럽 전용인 경우에 대해 검증
-    if (event.clubId) {
-      const isInClub = await this.eventRepository.isUserInClub(
-        user.id,
-        eventId,
-      );
-      if (!isInClub)
-        throw new ForbiddenException(
-          '클럽 전용 모임 정보를 수정하기 위해서는 클럽에 속해야 합니다.',
-        );
-    }
-
     const data: UpdateEventData = {
       title: payload.title,
       description: payload.description,
@@ -239,18 +227,6 @@ export class EventService {
           '현재 참가 인원보다 적은 수로 변경할 수 없습니다.',
         );
       }
-    }
-
-    // 모임이 클럽 전용인 경우에 대해 검증
-    if (event.clubId) {
-      const isInClub = await this.eventRepository.isUserInClub(
-        user.id,
-        eventId,
-      );
-      if (!isInClub)
-        throw new ForbiddenException(
-          '클럽 전용 모임 정보를 수정하기 위해서는 클럽에 속해야 합니다.',
-        );
     }
 
     const updatedEvent = await this.eventRepository.updateEvent(eventId, data);
@@ -329,18 +305,6 @@ export class EventService {
 
     if (!participantsIds.includes(user.id)) {
       throw new ConflictException('참여하지 않은 모임입니다.');
-    }
-
-    // 모임이 클럽 전용인 경우에 대해 검증
-    if (event.clubId) {
-      const isInClub = await this.eventRepository.isUserInClub(
-        user.id,
-        eventId,
-      );
-      if (!isInClub)
-        throw new ForbiddenException(
-          '클럽 전용 모임에 참여하기 위해서는 클럽에 속해야 합니다.',
-        );
     }
 
     await this.eventRepository.leaveEvent(eventId, user.id);
