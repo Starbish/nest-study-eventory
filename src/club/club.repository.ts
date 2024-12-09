@@ -6,6 +6,7 @@ import { CreateClubData } from './type/create-club-data.type';
 import { ClubJoinState } from '@prisma/client';
 import { UpdateClubData } from './type/update-club-data.type';
 import { EventData } from 'src/event/type/event-data.type';
+import { LeaveClubData, LeaveClubEventAction } from './type/leave-club-data.type';
 
 @Injectable()
 export class ClubRepository {
@@ -76,14 +77,37 @@ export class ClubRepository {
     });
   }
 
-  async leaveClub(userId: number, clubId: number): Promise<void> {
-    await this.prisma.clubJoin.delete({
-      where: {
-        userId_clubId: {
-          userId,
-          clubId,
+  async leaveClub(userId: number, tasks: LeaveClubData[], clubId: number): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      // 관련된 Club 전용 Event에 대한 데이터 삭제
+      for(let i = 0; i < tasks.length; i++) {
+        if(tasks[i].action === LeaveClubEventAction.Leave) {
+          await tx.eventJoin.delete({
+            where: {
+              eventId_userId: {
+                eventId: tasks[i].eventId,
+                userId: userId,
+              },
+            },
+          });
+        } else if(tasks[i].action === LeaveClubEventAction.LeaveAndDisband) {
+          await tx.event.delete({
+            where: {
+              id: tasks[i].eventId,
+            },
+          });
+        }
+      }
+
+      // clubJoin row 삭제
+      await tx.clubJoin.delete({
+        where: {
+          userId_clubId: {
+            userId,
+            clubId,
+          },
         },
-      },
+      });
     });
   }
 

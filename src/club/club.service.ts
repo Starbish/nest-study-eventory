@@ -13,6 +13,7 @@ import { UpdateClubData } from './type/update-club-data.type';
 import { ClubJoinState } from '@prisma/client';
 import { EventListDto } from 'src/event/dto/event.dto';
 import { EventData } from 'src/event/type/event-data.type';
+import { LeaveClubData, LeaveClubEventAction } from './type/leave-club-data.type';
 
 @Injectable()
 export class ClubService {
@@ -77,7 +78,7 @@ export class ClubService {
     else if (joinState?.state === ClubJoinState.Applied)
       throw new ConflictException('이미 가입 신청한 클럽입니다.');
 
-    await this.clubRepository.leaveClub(user.id, clubId);
+    await this.clubRepository.joinClub(user.id, clubId);
   }
 
   async leaveClub(user: UserBaseInfo, clubId: number): Promise<void> {
@@ -99,19 +100,29 @@ export class ClubService {
       user.id,
       clubId,
     );
-    for (let i = 0; i < list.length; i++) {
-      // 해당 모임이 이미 시작한 모임이라면, 어쩔 수 없다.
-      if (list[i].startTime < new Date()) continue;
 
-      // 해당 모임이 시작 전이라면, 아직 돌이킬 수 있다.
-      // 모임의 호스트가 유저라면, 모임을 삭제한다.
-      if (list[i].hostId === user.id)
-        await this.clubRepository.disbandClubEvent(list[i].id);
-      // 모임 참여자라면, 모임에서 나옴
-      else await this.clubRepository.leaveClubEvent(user.id, list[i].id);
-    }
+    // 탈퇴하려는 클럽의 전용 모임에 가입한 게 있는 경우
+    // 아직 시작하지 않은 모임에 대해서만 탈퇴 및 해체 처리를 진행한다.
+    const tasks: LeaveClubData[] = list
+      .filter((event) => event.startTime > new Date())
+      .map((event) => {
+        // 클럽을 탈퇴하려는 유저가 해당 모임의 호스트인 경우
+        // 모임이 아직 시작하지 않았으므로 해체한다.
+        if(event.hostId === user.id) {
+          return {
+            eventId: event.id,
+            action: LeaveClubEventAction.LeaveAndDisband,
+          }
+        // 모임 호스트가 아닌 경우에는 그냥 탈퇴하고 나온다.
+        } else {
+          return {
+            eventId: event.id,
+            action: LeaveClubEventAction.Leave,
+          }
+        }
+      });
 
     // clubJoin row 삭제
-    await this.clubRepository.leaveClub(user.id, clubId);
+    await this.clubRepository.leaveClub(user.id, tasks, clubId);
   }
 }
