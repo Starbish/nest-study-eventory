@@ -76,16 +76,13 @@ export class ClubRepository {
     });
   }
 
-  async leaveClub(
-    userId: number,
-    clubId: number,
-  ): Promise<void> {
+  async leaveClub(userId: number, clubId: number): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
       // eventJoin
       // eventCity
       // event
       // clubJoin
-      
+
       // Event host의 경우 Event disband
       // Event member의 경우 본인만 빠져나감
 
