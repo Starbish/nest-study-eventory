@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../common/services/prisma.service';
 import { CreateReviewData } from './type/create-review-data.type';
 import { ReviewData } from './type/review-data.type';
-import { User, Event } from '@prisma/client';
+import { User, Event, ClubJoinState } from '@prisma/client';
 import { ReviewQuery } from './query/review.query';
 import { UpdateReviewData } from './type/update-review-data.type';
 import { EventData } from 'src/event/type/event-data.type';
@@ -96,6 +96,11 @@ export class ReviewRepository {
     });
   }
 
+  /*
+    리뷰 조회에서 신경써야 할 건 크게 두 가지임.
+    1. 클럽 전용 모임의 리뷰는 클럽 구성원들만 조회할 수 있다.
+    2. 클럽 전용 모임 중에서 아카이브화 된 리뷰는 요청자의 클럽 가입 여부와는 무관하게, 현재 그 모임에 소속되어 있는지로 결정한다.
+  */
   async getReviews(userId: number, query: ReviewQuery): Promise<ReviewData[]> {
     return this.prisma.review.findMany({
       where: {
@@ -104,10 +109,15 @@ export class ReviewRepository {
           deletedAt: null,
           id: query.userId,
         },
-        OR: [
-          // 아카이브된 모임이라면 요청한 사람이 속해있는지 확인
-          {
-            event: {
+        // 아래의 코드를 다시 제대로 분류해보자.
+        // 1. 아카이브된 (전) 클럽 전용 모임.
+        // 2. 아카이브 되지 않은 (현) 클럽 전용 모임.
+        // 3. 아카이브와는 전혀 무관한 개방 모임.
+        event: {
+          OR: [
+            // 1. 아카이브된 (전) 클럽 전용 모임.
+            // 현재 모임에 속해있는지 확인해야 한다.
+            {
               isArchived: true,
               eventJoin: {
                 some: {
@@ -115,14 +125,26 @@ export class ReviewRepository {
                 },
               },
             },
-          },
-          // 아카이브 되지 않은, 클럽 전용이 아닌 모임도 보여주어야 함
-          {
-            event: {
+            // 2. 아카이브 되지 않은 (현) 클럽 전용 모임.
+            // 클럽에 속해있는지 확인해야 한다.
+            {
               isArchived: false,
+              clubId: { not: null },
+              club: {
+                clubJoin: {
+                  some: {
+                    userId,
+                  },
+                },
+              },
             },
-          },
-        ],
+            // 3. 아카이브와는 전혀 무관한 개방 모임.
+            {
+              isArchived: false,
+              clubId: null,
+            },
+          ],
+        },
       },
       select: {
         id: true,
@@ -174,6 +196,20 @@ export class ReviewRepository {
           userId,
           eventId,
         },
+      },
+    });
+
+    return !!result;
+  }
+
+  async isUserInClub(userId: number, clubId: number): Promise<boolean> {
+    const result = await this.prisma.clubJoin.findUnique({
+      where: {
+        userId_clubId: {
+          userId,
+          clubId,
+        },
+        state: ClubJoinState.Accepted,
       },
     });
 

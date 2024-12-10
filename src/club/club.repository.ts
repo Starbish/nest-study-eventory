@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { ClubInfoDto } from './dto/club-info.dto';
 import { PrismaService } from 'src/common/services/prisma.service';
 import { ClubInfoData } from './type/club-info-data.type';
 import { CreateClubData } from './type/create-club-data.type';
@@ -7,6 +6,7 @@ import { ClubJoinState } from '@prisma/client';
 import { UpdateClubData } from './type/update-club-data.type';
 import { EventData } from 'src/event/type/event-data.type';
 import { ClubJoinData } from './type/club-join-data.type';
+import { UserData } from 'src/user/type/user-data.type';
 
 @Injectable()
 export class ClubRepository {
@@ -224,7 +224,6 @@ export class ClubRepository {
       });
 
       // 시작하고 나서의 Event라면, 데이터를 지우지 않고 아카이브화 한다.
-      // DELETE로 정의된 API에서 이런 POST 행동이 포함되어도 괜찮을까요?
       await tx.event.updateMany({
         where: {
           clubId,
@@ -251,6 +250,32 @@ export class ClubRepository {
         },
       });
     });
+  }
+
+  async getClubApplicationList(clubId: number): Promise<UserData[]> {
+    const result = await this.prisma.clubJoin.findMany({
+      where: {
+        club: {
+          id: clubId,
+        },
+        state: ClubJoinState.Applied,
+      },
+      select: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            birthday: true,
+            cityId: true,
+            categoryId: true,
+          },
+        },
+      },
+    });
+
+    // UserData 에 맞게 살짝 갈무리
+    return result.map((data) => data.user);
   }
 
   async findClubByTitle(title: string): Promise<ClubInfoData | null> {
@@ -292,10 +317,10 @@ export class ClubRepository {
   }
 
   // id = clubJoin ID
-  async getClubJoinFromId(id: number): Promise<ClubJoinData | null> {
+  async getClubJoinFromId(clubJoinId: number): Promise<ClubJoinData | null> {
     return this.prisma.clubJoin.findUnique({
       where: {
-        id,
+        id: clubJoinId,
       },
       // ClubJoinData
       select: {

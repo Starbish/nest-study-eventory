@@ -91,6 +91,17 @@ export class ReviewService {
         '아카이브된 모임은 모임 구성원만 조회할 수 있습니다.',
       );
 
+    if (event?.clubId) {
+      const isInClub = await this.reviewRepository.isUserInClub(
+        user.id,
+        event.clubId,
+      );
+      if (!isInClub)
+        throw new ForbiddenException(
+          '클럽 전용 모임의 리뷰는 클럽 구성원만 조회할 수 있습니다.',
+        );
+    }
+
     return ReviewDto.from(review);
   }
 

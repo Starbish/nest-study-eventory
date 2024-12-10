@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ClubInfoDto } from './dto/club-info.dto';
+import { ClubInfoDto } from './dto/club-info.dto copy';
 import { ClubRepository } from './club.repository';
 import { UserBaseInfo } from 'src/auth/type/user-base-info.type';
 import { CreateClubPayload } from './payload/create-club.payload';
@@ -15,6 +15,7 @@ import { UpdateClubData } from './type/update-club-data.type';
 import { ClubJoinState } from '@prisma/client';
 import { RespondClubApplicationPayload } from './payload/respond-club-application.payload';
 import { DelegateClubOwnerPayload } from './payload/delegate-club-owner.payload copy';
+import { UserDto } from 'src/user/dto/user.dto';
 
 @Injectable()
 export class ClubService {
@@ -171,10 +172,25 @@ export class ClubService {
 
     // 이 API를 호출한 유저가 클럽 owner인지 확인
     if (user.id !== club.ownerId)
-      throw new ForbiddenException(
-        '클럽장만 클럽 가입을 승인/거절할 수 있습니다.',
-      );
+      throw new ForbiddenException('클럽장만 클럽을 해체할 수 있습니다.');
 
     await this.clubRepository.disbandClub(clubId);
+  }
+
+  async getClubApplicationList(
+    user: UserBaseInfo,
+    clubId: number,
+  ): Promise<UserDto[]> {
+    const club = await this.clubRepository.findClubByIndex(clubId);
+    if (!club) throw new NotFoundException('존재하지 않는 클럽 ID입니다.');
+
+    // 이 API를 호출한 유저가 클럽 owner인지 확인
+    if (user.id !== club.ownerId)
+      throw new ForbiddenException(
+        '클럽장만 클럽 가입 명단을 조회할 수 있습니다.',
+      );
+
+    const userList = await this.clubRepository.getClubApplicationList(clubId);
+    return UserDto.fromArray(userList);
   }
 }

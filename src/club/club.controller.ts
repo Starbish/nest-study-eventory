@@ -20,7 +20,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ClubService } from './club.service';
-import { ClubInfoDto } from './dto/club-info.dto';
+import { ClubInfoDto } from './dto/club-info.dto copy';
 import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 import { CurrentUser } from 'src/auth/decorator/user.decorator';
 import { CreateClubPayload } from './payload/create-club.payload';
@@ -28,6 +28,7 @@ import { UserBaseInfo } from 'src/auth/type/user-base-info.type';
 import { PatchClubPayload } from './payload/patch-club.payload';
 import { RespondClubApplicationPayload } from './payload/respond-club-application.payload';
 import { DelegateClubOwnerPayload } from './payload/delegate-club-owner.payload copy';
+import { UserDto } from 'src/user/dto/user.dto';
 
 @Controller('clubs')
 @ApiTags('Club API')
@@ -141,5 +142,18 @@ export class ClubController {
     @CurrentUser() user: UserBaseInfo,
   ): Promise<void> {
     return this.clubService.disbandClub(user, clubId);
+  }
+
+  // feat/7
+  @Get(':clubId/join')
+  @ApiOperation({ summary: '클럽 가입을 신청한 유저들 명단을 조회합니다.' })
+  @ApiOkResponse({ type: ClubInfoDto })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async getClubApplicationList(
+    @Param('clubId', ParseIntPipe) clubId: number,
+    @CurrentUser() user: UserBaseInfo,
+  ): Promise<UserDto[]> {
+    return this.clubService.getClubApplicationList(user, clubId);
   }
 }
