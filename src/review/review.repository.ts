@@ -5,6 +5,7 @@ import { ReviewData } from './type/review-data.type';
 import { User, Event } from '@prisma/client';
 import { ReviewQuery } from './query/review.query';
 import { UpdateReviewData } from './type/update-review-data.type';
+import { EventData } from 'src/event/type/event-data.type';
 
 @Injectable()
 export class ReviewRepository {
@@ -95,7 +96,7 @@ export class ReviewRepository {
     });
   }
 
-  async getReviews(query: ReviewQuery): Promise<ReviewData[]> {
+  async getReviews(userId: number, query: ReviewQuery): Promise<ReviewData[]> {
     return this.prisma.review.findMany({
       where: {
         eventId: query.eventId,
@@ -103,6 +104,25 @@ export class ReviewRepository {
           deletedAt: null,
           id: query.userId,
         },
+        OR: [
+          // 아카이브된 모임이라면 요청한 사람이 속해있는지 확인
+          {
+            event: {
+              isArchived: true,
+              eventJoin: {
+                some: {
+                  userId: userId,
+                },
+              },
+            },
+          },
+          // 아카이브 되지 않은, 클럽 전용이 아닌 모임도 보여주어야 함
+          {
+            event: {
+              isArchived: false,
+            },
+          },
+        ],
       },
       select: {
         id: true,
@@ -145,5 +165,18 @@ export class ReviewRepository {
         id: reviewId,
       },
     });
+  }
+
+  async isUserInEvent(userId: number, eventId: number): Promise<boolean> {
+    const result = await this.prisma.eventJoin.findUnique({
+      where: {
+        eventId_userId: {
+          userId,
+          eventId,
+        },
+      },
+    });
+
+    return !!result;
   }
 }
