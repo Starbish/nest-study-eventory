@@ -114,6 +114,18 @@ export class EventService {
         );
     }
 
+    // 아카이브된 경우 처리
+    if (event.isArchived) {
+      const joinedEvent = await this.eventRepository.isUserInEvent(
+        user.id,
+        eventId,
+      );
+      if (!joinedEvent)
+        throw new ForbiddenException(
+          '아카이브된 모임은 구성원만 조회할 수 있습니다.',
+        );
+    }
+
     return EventDetailDto.from(event);
   }
 

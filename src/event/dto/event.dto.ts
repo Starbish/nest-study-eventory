@@ -62,6 +62,12 @@ export class EventDto {
   })
   clubId!: number | null;
 
+  @ApiProperty({
+    description: '모임 아카이브화 여부',
+    type: Boolean,
+  })
+  isArchived!: boolean;
+
   static from(data: EventData): EventDto {
     return {
       id: data.id,
@@ -74,6 +80,7 @@ export class EventDto {
       endTime: data.endTime,
       maxPeople: data.maxPeople,
       clubId: data.clubId,
+      isArchived: data.isArchived,
     };
   }
 

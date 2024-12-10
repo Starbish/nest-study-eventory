@@ -58,7 +58,7 @@ model Event {
   description String
   maxPeople   Int      @map("max_people")
   clubId      Int?     @map("club_id")
-  isArchived  Boolean? @map("is_archived")
+  isArchived  Boolean  @map("is_archived") @default(false)
   startTime   DateTime @map("start_time")
   endTime     DateTime @map("end_time")
   createdAt   DateTime @default(now()) @map("created_at")
