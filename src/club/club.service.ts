@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ClubInfoDto } from './dto/club-info.dto copy';
+import { ClubInfoDto } from './dto/club-info.dt';
 import { ClubRepository } from './club.repository';
 import { UserBaseInfo } from 'src/auth/type/user-base-info.type';
 import { CreateClubPayload } from './payload/create-club.payload';

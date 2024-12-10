@@ -20,7 +20,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ClubService } from './club.service';
-import { ClubInfoDto } from './dto/club-info.dto copy';
+import { ClubInfoDto } from './dto/club-info.dt';
 import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 import { CurrentUser } from 'src/auth/decorator/user.decorator';
 import { CreateClubPayload } from './payload/create-club.payload';
