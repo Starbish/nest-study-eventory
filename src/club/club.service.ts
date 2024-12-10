@@ -174,5 +174,7 @@ export class ClubService {
       throw new ForbiddenException(
         '클럽장만 클럽 가입을 승인/거절할 수 있습니다.',
       );
+
+    await this.clubRepository.disbandClub(clubId);
   }
 }

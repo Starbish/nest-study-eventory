@@ -180,6 +180,79 @@ export class ClubRepository {
     });
   }
 
+  async disbandClub(clubId: number): Promise<void> {
+    // Event 중에서 아직 시작 대기중인 것들은 삭제한다.
+    // Event 를 삭제하기 전에, Event 에 종속적인 것들을 먼저 삭제
+    // EventCity 삭제
+    const time = new Date();
+    await this.prisma.$transaction(async (tx) => {
+      await tx.eventCity.deleteMany({
+        where: {
+          event: {
+            club: {
+              id: clubId,
+            },
+            startTime: {
+              gt: time,
+            },
+          },
+        },
+      });
+
+      // EventJoin 삭제
+      await tx.eventJoin.deleteMany({
+        where: {
+          event: {
+            club: {
+              id: clubId,
+            },
+            startTime: {
+              gt: time,
+            },
+          },
+        },
+      });
+
+      // Event 삭제
+      await tx.event.deleteMany({
+        where: {
+          clubId,
+          startTime: {
+            gt: time,
+          },
+        },
+      });
+
+      // 시작하고 나서의 Event라면, 데이터를 지우지 않고 아카이브화 한다.
+      // DELETE로 정의된 API에서 이런 POST 행동이 포함되어도 괜찮을까요?
+      await tx.event.updateMany({
+        where: {
+          clubId,
+          startTime: {
+            lte: time,
+          },
+        },
+        data: {
+          clubId: null,
+          isArchived: true,
+        },
+      });
+
+      // Event 관련 데이터를 삭제 & 아카이빙했다면, 아래는 Club 관련
+      await tx.clubJoin.deleteMany({
+        where: {
+          clubId,
+        },
+      });
+
+      await tx.club.delete({
+        where: {
+          id: clubId,
+        },
+      });
+    });
+  }
+
   async findClubByTitle(title: string): Promise<ClubInfoData | null> {
     return this.prisma.club.findFirst({
       where: {
@@ -233,6 +306,4 @@ export class ClubRepository {
       },
     });
   }
-
-  async;
 }
