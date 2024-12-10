@@ -6,6 +6,7 @@ import { CreateClubData } from './type/create-club-data.type';
 import { ClubJoinState } from '@prisma/client';
 import { UpdateClubData } from './type/update-club-data.type';
 import { EventData } from 'src/event/type/event-data.type';
+import { ClubJoinData } from './type/club-join-data.type';
 
 @Injectable()
 export class ClubRepository {
@@ -148,6 +149,37 @@ export class ClubRepository {
     });
   }
 
+  async delegateClubOwner(clubId: number, userId: number): Promise<void> {
+    await this.prisma.club.update({
+      where: {
+        id: clubId,
+      },
+      data: {
+        ownerId: userId,
+      },
+    });
+  }
+
+  async respondClubApplication(
+    userId: number,
+    clubId: number,
+    decision: boolean,
+  ): Promise<void> {
+    const state = decision ? ClubJoinState.Accepted : ClubJoinState.Applied;
+    await this.prisma.clubJoin.update({
+      where: {
+        userId_clubId: {
+          userId,
+          clubId,
+        },
+      },
+
+      data: {
+        state,
+      },
+    });
+  }
+
   async findClubByTitle(title: string): Promise<ClubInfoData | null> {
     return this.prisma.club.findFirst({
       where: {
@@ -164,14 +196,43 @@ export class ClubRepository {
     });
   }
 
-  async getUserJoinState(id: number): Promise<{ state: ClubJoinState } | null> {
+  // 완전 엉망인 코드를 쓰고 있었네요...
+  async getUserClubJoinData(
+    userId: number,
+    clubId: number,
+  ): Promise<ClubJoinData | null> {
     return this.prisma.clubJoin.findUnique({
       where: {
-        id: id,
+        userId_clubId: {
+          userId,
+          clubId,
+        },
       },
+      // ClubJoinData
       select: {
+        id: true,
+        userId: true,
+        clubId: true,
         state: true,
       },
     });
   }
+
+  // id = clubJoin ID
+  async getClubJoinFromId(id: number): Promise<ClubJoinData | null> {
+    return this.prisma.clubJoin.findUnique({
+      where: {
+        id,
+      },
+      // ClubJoinData
+      select: {
+        id: true,
+        userId: true,
+        clubId: true,
+        state: true,
+      },
+    });
+  }
+
+  async;
 }

@@ -1,5 +1,7 @@
 import {
+  BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -11,8 +13,8 @@ import { CreateClubData } from './type/create-club-data.type';
 import { PatchClubPayload } from './payload/patch-club.payload';
 import { UpdateClubData } from './type/update-club-data.type';
 import { ClubJoinState } from '@prisma/client';
-import { EventListDto } from 'src/event/dto/event.dto';
-import { EventData } from 'src/event/type/event-data.type';
+import { RespondClubApplicationPayload } from './payload/respond-club-application.payload';
+import { DelegateClubOwnerPayload } from './payload/delegate-club-owner.payload copy';
 
 @Injectable()
 export class ClubService {
@@ -71,10 +73,13 @@ export class ClubService {
     const club = await this.clubRepository.findClubByIndex(clubId);
     if (!club) throw new NotFoundException('존재하지 않는 클럽 ID입니다.');
 
-    const joinState = await this.clubRepository.getUserJoinState(user.id);
-    if (joinState?.state === ClubJoinState.Accepted)
+    const clubJoin = await this.clubRepository.getUserClubJoinData(
+      user.id,
+      clubId,
+    );
+    if (clubJoin?.state === ClubJoinState.Accepted)
       throw new ConflictException('이미 가입한 클럽입니다.');
-    else if (joinState?.state === ClubJoinState.Applied)
+    else if (clubJoin?.state === ClubJoinState.Applied)
       throw new ConflictException('이미 가입 신청한 클럽입니다.');
 
     await this.clubRepository.joinClub(user.id, clubId);
@@ -84,10 +89,12 @@ export class ClubService {
     const club = await this.clubRepository.findClubByIndex(clubId);
     if (!club) throw new NotFoundException('존재하지 않는 클럽 ID입니다.');
 
-    const joinState = await this.clubRepository.getUserJoinState(user.id);
-    // Accepted 상태이든, Applied 상태이든 결국 할 것은 row를 삭제하는 것
-    if (!joinState)
-      throw new NotFoundException(
+    const clubJoin = await this.clubRepository.getUserClubJoinData(
+      user.id,
+      clubId,
+    );
+    if (!clubJoin || clubJoin.state !== ClubJoinState.Accepted)
+      throw new ConflictException(
         '클럽에 속해있지 않거나, 아직 가입 신청하지 않은 클럽입니다.',
       );
 
@@ -96,5 +103,76 @@ export class ClubService {
 
     // club의 user와 관련된 모든 데이터를 지운다.
     await this.clubRepository.leaveClub(user.id, clubId);
+  }
+
+  async delegateClubOwner(
+    user: UserBaseInfo,
+    clubId: number,
+    payload: DelegateClubOwnerPayload,
+  ): Promise<void> {
+    const club = await this.clubRepository.findClubByIndex(clubId);
+    if (!club) throw new NotFoundException('존재하지 않는 클럽 ID입니다.');
+
+    // 이 API를 호출한 유저가 클럽 owner인지 확인
+    if (user.id !== club.ownerId)
+      throw new ForbiddenException(
+        '클럽장만 다른 구성원에게 클럽장을 승계할 수 있습니다.',
+      );
+
+    // 승계받을 유저가 클럽 구성원인지 확인
+    const clubJoin = await this.clubRepository.getUserClubJoinData(
+      user.id,
+      clubId,
+    );
+    if (!clubJoin || clubJoin.state !== ClubJoinState.Accepted)
+      throw new ConflictException('승계받을 유저가 클럽 구성원이 아닙니다.');
+
+    // 모든 예외사항을 통과했다면, club row의 ownerId만 바꿔주면 됨.
+    await this.clubRepository.delegateClubOwner(clubId, user.id);
+  }
+
+  async respondClubApplication(
+    user: UserBaseInfo,
+    clubId: number,
+    joinId: number,
+    payload: RespondClubApplicationPayload,
+  ): Promise<void> {
+    const club = await this.clubRepository.findClubByIndex(clubId);
+    if (!club) throw new NotFoundException('존재하지 않는 클럽 ID입니다.');
+
+    // 이 API를 호출한 유저가 클럽 owner인지 확인
+    if (user.id !== club.ownerId)
+      throw new ForbiddenException(
+        '클럽장만 클럽 가입을 승인/거절할 수 있습니다.',
+      );
+
+    // 신청한 clubJoin이 이 클럽에 해당하는지 확인
+    const clubJoin = await this.clubRepository.getClubJoinFromId(joinId);
+    if (!clubJoin)
+      throw new NotFoundException(
+        '해당 유저가 클럽 가입 신청한 이력이 없습니다.',
+      );
+
+    if (clubJoin.clubId !== clubId)
+      throw new ConflictException(
+        '클럽 가입 신청의 클럽과 입력한 클럽 ID가 일치하지 않습니다.',
+      );
+
+    await this.clubRepository.respondClubApplication(
+      clubJoin.userId,
+      clubId,
+      payload.decision,
+    );
+  }
+
+  async disbandClub(user: UserBaseInfo, clubId: number): Promise<void> {
+    const club = await this.clubRepository.findClubByIndex(clubId);
+    if (!club) throw new NotFoundException('존재하지 않는 클럽 ID입니다.');
+
+    // 이 API를 호출한 유저가 클럽 owner인지 확인
+    if (user.id !== club.ownerId)
+      throw new ForbiddenException(
+        '클럽장만 클럽 가입을 승인/거절할 수 있습니다.',
+      );
   }
 }
