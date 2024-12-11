@@ -45,6 +45,7 @@ export class EventRepository {
         endTime: true,
         maxPeople: true,
         clubId: true,
+        isArchived: true,
       },
     });
   }
@@ -87,6 +88,7 @@ export class EventRepository {
         endTime: true,
         maxPeople: true,
         clubId: true,
+        isArchived: true,
       },
     });
   }
@@ -149,6 +151,7 @@ export class EventRepository {
         endTime: true,
         maxPeople: true,
         clubId: true,
+        isArchived: true,
       },
     });
   }
@@ -166,11 +169,25 @@ export class EventRepository {
           id: query.hostId,
           deletedAt: null,
         },
-        // club_id가 null이 아닐 때만 작동해야 하므로, OR 을 이용하여 구현함
         OR: [
           // club_id 가 null 이어도 가져와야 하고
           {
             clubId: null,
+            OR: [
+              // 아카이브된 모임이라면 요청한 사람이 속해있는지 확인
+              {
+                isArchived: true,
+                eventJoin: {
+                  some: {
+                    userId: userId,
+                  },
+                },
+              },
+              // 아카이브 되지 않은, 클럽 전용이 아닌 모임도 보여주어야 함
+              {
+                isArchived: false,
+              },
+            ],
           },
           // club_id 가 null 이 아니라면, 요청하는 유저가 권한이 있는지를 확인해야 함
           {
@@ -201,6 +218,7 @@ export class EventRepository {
         endTime: true,
         maxPeople: true,
         clubId: true,
+        isArchived: true,
       },
     });
   }
@@ -229,6 +247,7 @@ export class EventRepository {
         endTime: true,
         maxPeople: true,
         clubId: true,
+        isArchived: true,
       },
     });
   }
@@ -289,6 +308,7 @@ export class EventRepository {
         endTime: true,
         maxPeople: true,
         clubId: true,
+        isArchived: true,
         eventJoin: {
           where: {
             user: {
@@ -316,6 +336,19 @@ export class EventRepository {
         },
       },
     });
+  }
+
+  async isUserInEvent(userId: number, eventId: number): Promise<boolean> {
+    const result = await this.prisma.eventJoin.findUnique({
+      where: {
+        eventId_userId: {
+          userId,
+          eventId,
+        },
+      },
+    });
+
+    return !!result;
   }
 
   /* Club 관련 */

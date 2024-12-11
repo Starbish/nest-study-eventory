@@ -50,4 +50,8 @@ export class UserDto {
       categoryId: data.categoryId,
     };
   }
+
+  static fromArray(data: UserData[]): UserDto[] {
+    return data.map((element) => this.from(element));
+  }
 }

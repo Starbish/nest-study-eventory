@@ -11,4 +11,5 @@ export type EventData = {
   endTime: Date;
   maxPeople: number;
   clubId: number | null;
+  isArchived: boolean;
 };

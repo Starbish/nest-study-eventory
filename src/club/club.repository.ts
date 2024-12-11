@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { ClubInfoDto } from './dto/club-info.dto';
 import { PrismaService } from 'src/common/services/prisma.service';
 import { ClubInfoData } from './type/club-info-data.type';
 import { CreateClubData } from './type/create-club-data.type';
 import { ClubJoinState } from '@prisma/client';
 import { UpdateClubData } from './type/update-club-data.type';
 import { EventData } from 'src/event/type/event-data.type';
+import { ClubJoinData } from './type/club-join-data.type';
+import { UserData } from 'src/user/type/user-data.type';
 
 @Injectable()
 export class ClubRepository {
@@ -148,6 +149,135 @@ export class ClubRepository {
     });
   }
 
+  async delegateClubOwner(clubId: number, userId: number): Promise<void> {
+    await this.prisma.club.update({
+      where: {
+        id: clubId,
+      },
+      data: {
+        ownerId: userId,
+      },
+    });
+  }
+
+  async respondClubApplication(
+    userId: number,
+    clubId: number,
+    decision: boolean,
+  ): Promise<void> {
+    const state = decision ? ClubJoinState.Accepted : ClubJoinState.Applied;
+    await this.prisma.clubJoin.update({
+      where: {
+        userId_clubId: {
+          userId,
+          clubId,
+        },
+      },
+
+      data: {
+        state,
+      },
+    });
+  }
+
+  async disbandClub(clubId: number): Promise<void> {
+    // Event 중에서 아직 시작 대기중인 것들은 삭제한다.
+    // Event 를 삭제하기 전에, Event 에 종속적인 것들을 먼저 삭제
+    // EventCity 삭제
+    const time = new Date();
+    await this.prisma.$transaction(async (tx) => {
+      await tx.eventCity.deleteMany({
+        where: {
+          event: {
+            club: {
+              id: clubId,
+            },
+            startTime: {
+              gt: time,
+            },
+          },
+        },
+      });
+
+      // EventJoin 삭제
+      await tx.eventJoin.deleteMany({
+        where: {
+          event: {
+            club: {
+              id: clubId,
+            },
+            startTime: {
+              gt: time,
+            },
+          },
+        },
+      });
+
+      // Event 삭제
+      await tx.event.deleteMany({
+        where: {
+          clubId,
+          startTime: {
+            gt: time,
+          },
+        },
+      });
+
+      // 시작하고 나서의 Event라면, 데이터를 지우지 않고 아카이브화 한다.
+      await tx.event.updateMany({
+        where: {
+          clubId,
+          startTime: {
+            lte: time,
+          },
+        },
+        data: {
+          clubId: null,
+          isArchived: true,
+        },
+      });
+
+      // Event 관련 데이터를 삭제 & 아카이빙했다면, 아래는 Club 관련
+      await tx.clubJoin.deleteMany({
+        where: {
+          clubId,
+        },
+      });
+
+      await tx.club.delete({
+        where: {
+          id: clubId,
+        },
+      });
+    });
+  }
+
+  async getClubApplicationList(clubId: number): Promise<UserData[]> {
+    const result = await this.prisma.clubJoin.findMany({
+      where: {
+        club: {
+          id: clubId,
+        },
+        state: ClubJoinState.Applied,
+      },
+      select: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            birthday: true,
+            cityId: true,
+            categoryId: true,
+          },
+        },
+      },
+    });
+
+    // UserData 에 맞게 살짝 갈무리
+    return result.map((data) => data.user);
+  }
+
   async findClubByTitle(title: string): Promise<ClubInfoData | null> {
     return this.prisma.club.findFirst({
       where: {
@@ -164,12 +294,39 @@ export class ClubRepository {
     });
   }
 
-  async getUserJoinState(id: number): Promise<{ state: ClubJoinState } | null> {
+  // 완전 엉망인 코드를 쓰고 있었네요...
+  async getUserClubJoinData(
+    userId: number,
+    clubId: number,
+  ): Promise<ClubJoinData | null> {
     return this.prisma.clubJoin.findUnique({
       where: {
-        id: id,
+        userId_clubId: {
+          userId,
+          clubId,
+        },
       },
+      // ClubJoinData
       select: {
+        id: true,
+        userId: true,
+        clubId: true,
+        state: true,
+      },
+    });
+  }
+
+  // id = clubJoin ID
+  async getClubJoinFromId(clubJoinId: number): Promise<ClubJoinData | null> {
+    return this.prisma.clubJoin.findUnique({
+      where: {
+        id: clubJoinId,
+      },
+      // ClubJoinData
+      select: {
+        id: true,
+        userId: true,
+        clubId: true,
         state: true,
       },
     });
